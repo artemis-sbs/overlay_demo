@@ -74,6 +74,12 @@ Properties:
     on gui_message(gui_button("Hero + Letterbox")):
         overlay_hero("CHAPTER ONE", subtitle="framed by cinematic bars", background="#000a", letterbox="Approaching the anomaly", seconds=6)
     gui_row("row-height: content;")
+    on gui_message(gui_button("Long Banner (timed parts)")):
+        overlay_banner("Long range sensors report a raider wing crossing the neutral zone on an intercept course. All ships are ordered to red alert and must hold station until the escort arrives.", seconds=30)
+    gui_row("row-height: content;")
+    on gui_message(gui_button("Long Subtitle (timed parts)")):
+        overlay_lower_third("Admiral Harkin", "Hold the line, commander. The convoy is three minutes out and every one of those freighters is carrying people who are counting on us to still be here when they arrive.")
+    gui_row("row-height: content;")
     on gui_message(gui_button("Banner, no fill")):
         overlay_banner("BARE TEXT BANNER", background=None)
     gui_row("row-height: content;")
