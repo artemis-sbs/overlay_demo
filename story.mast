@@ -68,6 +68,15 @@ Properties:
     on gui_message(gui_button("Hero via Signal")):
         signal_emit("overlay", {"to": client_id, "slot": "center_hero", "kind": "hero", "fields": {"title": "VIA SIGNAL", "subtitle": "shared-signal dispatch"}})
     gui_row("row-height: content;")
+    on gui_message(gui_button("Hero + Scrim")):
+        overlay_hero("CHAPTER ONE", subtitle="on a translucent scrim", background="#000a")
+    gui_row("row-height: content;")
+    on gui_message(gui_button("Hero + Letterbox")):
+        overlay_hero("CHAPTER ONE", subtitle="framed by cinematic bars", background="#000a", letterbox="Approaching the anomaly", seconds=6)
+    gui_row("row-height: content;")
+    on gui_message(gui_button("Banner, no fill")):
+        overlay_banner("BARE TEXT BANNER", background=None)
+    gui_row("row-height: content;")
     on gui_message(gui_button("Letterbox")):
         overlay_letterbox("Approaching the anomaly...")
     gui_row("row-height: content;")
