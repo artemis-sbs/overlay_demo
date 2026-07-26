@@ -1,0 +1,38 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+
+        {
+            "name": "Dbg w/Gui",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "cosmos_dev.mission_runner",
+            "console": "integratedTerminal",
+            "cwd": "${workspaceFolder}/../overlay_demo",
+            "envFile": "${workspaceFolder}/../overlay_demo/.env",
+            "args": [".", "--gui", "--map", "0"],
+            "subProcess": false
+        },
+        {
+            "name": "Dbg no Gui",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "cosmos_dev.mission_runner",
+            "console": "integratedTerminal",
+            "cwd": "${workspaceFolder}/../overlay_demo",
+            "envFile": "${workspaceFolder}/../overlay_demo/.env",
+            "args": [".", "--map", "0"],
+            "subProcess": false
+        },
+
+        // --- MAST source debugger (breakpoints in .mast) --------------------
+        {
+            "name": "MAST: Debug mission (one click)",
+            "type": "mast",
+            "request": "launch",
+            "mission": "${workspaceFolder}/../overlay_demo",
+            "map": "0"
+        }
+
+    ]
+}

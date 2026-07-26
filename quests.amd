@@ -1,0 +1,12 @@
+// Demo quest for the Phase 5B quest->overlay directives. Granted to each player in
+// the @map body; the "Complete Quest" button completes it, firing BOTH directive
+// forms: a declared-record reference (complete_overlay: ch1 -> overlays.amd) and an
+// inline directive (on_complete: toast ...).
+
+# [Demo Quest](demo_quest)
+---
+state: active
+complete_overlay: ch1
+on_complete: toast Quest complete!
+---
+Press "Complete Quest" on the Overlay Demo console to finish this quest.

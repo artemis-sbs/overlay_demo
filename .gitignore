@@ -1,0 +1,11 @@
+mast.compile.log
+mast.runtime.log
+overlay_debug.log
+test_results.log
+__pycache__/
+*.pyc
+debug.log
+
+# LegendaryMissions art, supplied by the media resource zip declared in
+# story.json. A local copy is just a 27MB duplicate of the LM repo's media/.
+media/

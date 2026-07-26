@@ -1,0 +1,10 @@
+AUTO_START: false
+PLAYER_CREATE_DEFAULT: true
+PLAYER_COUNT: 1
+DIFFICULTY: 5
+
+PLAYER_LIST:
+    -   name: "Artemis"
+        side: "tsn"
+        ship: "tsn_light_cruiser"
+        face: "terran"

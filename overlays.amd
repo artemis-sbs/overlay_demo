@@ -1,0 +1,25 @@
+// Declarative overlays for the Overlay Demo. Loaded once in the @map body via
+// amd_overlays(amd_section(doc, "overlays")); fired by overlay_amd(key).
+
+# [Overlays](overlays)
+
+## [Chapter One](ch1)
+---
+Kind: hero
+Subtitle: The Long Dark
+Seconds: 4
+---
+CHAPTER ONE
+
+## [Objective](obj_done)
+---
+Kind: toast
+---
+Convoy reached the waypoint
+
+## [Admiral](harkin)
+---
+Kind: lower_third
+Name: Admiral Harkin
+---
+Hold the line, commander.
