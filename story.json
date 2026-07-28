@@ -12,7 +12,7 @@
         "artemis-sbs.LegendaryMissions.prefabs.v1.4.0.mastlib",
         "artemis-sbs.LegendaryMissions.quests.v1.4.0.mastlib"
     ],
-    "resources": {
-        "media": "artemis-sbs.LegendaryMissions.media.v1.4.0.zip"
-    }
+    "shared_media": [
+        "artemis-sbs.LegendaryMissions.media.v1.4.0.zip"
+    ]
 }
