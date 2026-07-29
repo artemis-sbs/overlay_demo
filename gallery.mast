@@ -31,29 +31,27 @@
     gui_options_button()
     gallery_entry_data = gallery_entry(gallery_spec)
 
+    # The lower_third slot is x 20..80, y 74..94. Every panel otherwise runs to
+    # y 99 -- including the index on the left, whose right edge the slot clips at
+    # x 20..24 -- so the narration landed on top of live content. While a tour is
+    # running every panel stops at 68 instead, and the freed band is USED, not
+    # left blank: the tour controls sit in it, directly above the narration.
+    #
+    # Defined HERE, before the first panel that reads it. It was below the index
+    # at first and every build raised "gallery_bottom is not defined".
+    gallery_bottom = 68 if gallery_tour_running() else 99
+
 # --- header -----------------------------------------------------------------
     gui_section("area: 1, 1, 99, 5;")
     gui_row("row-height: 1fr; font:gui-3;")
     gui_text("$text:`CONTROL GALLERY`;font:gui-3;color:#8cf;", "col-width: content;")
-    # The tour walks the index in authoring order and narrates each stop through
-    # the overlay lower third -- the gallery introducing itself with the feature
-    # this mission was originally built to demo.
+    # Starting the tour lives in the header; DRIVING it lives down beside the
+    # narration (see the tour strip below), because controls belong next to the
+    # thing they move.
     if not gallery_tour_running():
         on gui_message(gui_button("Take the tour")):
             gallery_step = gallery_tour_start()
             jump gallery_tour_moved
-    if gallery_tour_running():
-        gui_text(f"$text:`tour {gallery_tour_position()}`;font:gui-1;color:#cc0;", "col-width: content;")
-        on gui_message(gui_button("Back")):
-            gallery_step = gallery_tour_step(-1)
-            jump gallery_tour_moved
-        on gui_message(gui_button("Next")):
-            gallery_step = gallery_tour_step(1)
-            jump gallery_tour_moved
-        on gui_message(gui_button("End tour")):
-            gallery_tour_stop()
-            overlay_clear("lower_third", to=client_id)
-            jump gallery_screen
     # On the server screen this is the way back to LM's main screen and its
     # pause/resume controls. Harmless on a console.
     on gui_message(gui_button("Main screen")):
@@ -63,7 +61,7 @@
     gui_text(f"$text:{gallery_label(gallery_entry_data['blurb'])};font:gui-1;color:#9ab;justify:right;")
 
 # --- index ------------------------------------------------------------------
-    gui_section("area: 1, 6, 24, 99;")
+    gui_section(f"area: 1, 6, 24, {gallery_bottom};")
     gui_row("row-height: 1fr;")
     gallery_nav = gui_list_box(gallery_nav_items(), "", item_template=gallery_nav_row, title_template=gallery_nav_title, select=True, collapsible=True)
     gallery_nav.set_selected_index(gallery_nav_index(gallery_spec), False)
@@ -251,9 +249,12 @@
 
         case "slider_float":
 # >>gallery: slider_float
+            # The range is low/high -- there is no min/max, and no label. An
+            # unrecognised key is simply ignored, so a slider with no range at
+            # all still draws: a bare line with nothing on it.
             default gallery_shield = 50
             gui_row("row-height: 2.4em; font:gui-2;")
-            gallery_fs = gui_slider("min:0;max:100;label:Shields;", var="gallery_shield")
+            gallery_fs = gui_slider("low: 0; high: 100; text: float;", var="gallery_shield")
             on gui_message(gallery_fs):
                 jump gallery_screen
             gui_row("row-height: 2.4em; font:gui-2;")
@@ -575,32 +576,53 @@
 # Both halves of a trap, under the panel each one drew. Only the fix gets a Copy
 # button -- nobody wants the broken one on their clipboard.
     if gallery_is_trap:
-        gallery_source_panel(f"{gallery_spec}_broken", "26, 42, 62, 99", "SOURCE   broken", "#f88")
-        gallery_frame("SOURCE   fixed", "63, 42, 99, 99", "#8f8")
+        gallery_source_panel(f"{gallery_spec}_broken", f"26, 42, 62, {gallery_bottom}", "SOURCE   broken", "#f88")
+        gallery_frame("SOURCE   fixed", f"63, 42, 99, {gallery_bottom}", "#8f8")
         gui_row("row-height: content;")
         on gui_message(gui_button("Copy the fix")):
             gallery_copy(f"{gallery_spec}_fixed")
-        gui_row("row-height: 1fr;")
-        gui_list_box(gallery_code_items(f"{gallery_spec}_fixed"), "", item_template=gallery_code_row, read_only=True)
+        gallery_code_view(f"{gallery_spec}_fixed")
     else:
         # Notes are authored in gallery.amd. A record with none gives the source
         # panel the full width rather than parking it beside an empty box.
-        gallery_has_notes = gallery_notes_panel(gallery_entry_data, "63, 44, 99, 99")
+        # Source gets the wider half. An even split truncated 42% of the lines:
+        # prose wraps gracefully and code does not, so the space is worth more
+        # here than there.
+        gallery_has_notes = gallery_notes_panel(gallery_entry_data, f"71, 44, 99, {gallery_bottom}")
         if gallery_has_notes:
-            gallery_frame(f"SOURCE   {gallery_spec}", "26, 44, 62, 99", "#fc8")
+            gallery_frame(f"SOURCE   {gallery_spec}", f"26, 44, 70, {gallery_bottom}", "#fc8")
         if not gallery_has_notes:
-            gallery_frame(f"SOURCE   {gallery_spec}", "26, 44, 99, 99", "#fc8")
+            gallery_frame(f"SOURCE   {gallery_spec}", f"26, 44, 99, {gallery_bottom}", "#fc8")
         gui_row("row-height: content;")
         on gui_message(gui_button("Copy to clipboard")):
             gallery_copy(gallery_spec)
-        gui_row("row-height: 1fr;")
-        gui_list_box(gallery_code_items(gallery_spec), "", item_template=gallery_code_row, read_only=True)
+        gallery_code_view(gallery_spec)
 
 # --- navigation -------------------------------------------------------------
     on change gallery_nav.value:
         gallery_next = gallery_key_of(gallery_nav.get_value())
         if gallery_next is not None:
             gallery_spec = gallery_next
+            jump gallery_screen
+
+# --- tour strip -------------------------------------------------------------
+# Sits in the band the panels gave up, immediately above the lower_third slot
+# (y 74). The controls are here rather than in the header so they are next to
+# the narration they drive -- reading a caption at the bottom and reaching for a
+# button at the top is the odd part, not the overlay.
+    if gallery_tour_running():
+        gui_section(f"area: 26, {gallery_bottom + 1}, 99, 73;")
+        gui_row("row-height: 1fr; font:gui-2;")
+        gui_text(f"$text:`TOUR   {gallery_tour_position()}`;font:gui-2;color:#cc0;", "col-width: content;")
+        on gui_message(gui_button("Back")):
+            gallery_step = gallery_tour_step(-1)
+            jump gallery_tour_moved
+        on gui_message(gui_button("Next")):
+            gallery_step = gallery_tour_step(1)
+            jump gallery_tour_moved
+        on gui_message(gui_button("End tour")):
+            gallery_tour_stop()
+            overlay_clear("lower_third", to=client_id)
             jump gallery_screen
 
     await gui()

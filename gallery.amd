@@ -78,8 +78,14 @@ Category: Controls
 ---
 low/high in the props; read .value in the handler.
 
-A slider declines to be measured (its size includes engine-drawn chrome), so a
-`col-width: content` column holding one falls back to flex rather than to zero.
+The range keys are `low` and `high`. There is no `min`/`max` and no `label` --
+an unrecognised key is ignored, so a slider with no range still draws, as a bare
+line with nothing on it.
+
+- `text:` takes `int`, `float`, or a literal string.
+- `show_number:` hides the number in the middle (`no` / `False`).
+- A slider declines to be measured (its size includes engine-drawn chrome), so a
+  `col-width: content` column holding one falls back to flex rather than to zero.
 
 ## [gui_list_box](list_box_basic)
 ---
@@ -175,10 +181,15 @@ cumulative string, and `submit` on Enter.
 ---
 Category: Controls
 ---
-The float slider. min/max/label live in the props.
+The float slider. Same props as the int one: low, high, text.
 
 `gui_int_slider` is the same widget restricted to whole numbers -- which is what
 you usually want for a count.
+
+The library docstrings used to show `min:0;max:100;label:Speed;`. Those keys do
+not exist; the authoritative list is
+`data/widget_stylestring_documentation.txt`, which gives `low`, `high`, `text`,
+`show_number`, plus the usual color/font/draw_layer.
 
 ## [gui_grid](grid_basic)
 ---

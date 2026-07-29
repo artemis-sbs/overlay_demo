@@ -124,15 +124,17 @@ def gallery_copy(key):
 # ---------------------------------------------------------------------------
 # Rendering code
 #
-# gui_text_area is NOT usable for this. Its mini-markdown eats source: a line
-# starting with '#' -- a MAST comment -- becomes an h1, '-' becomes a bullet,
-# and '$' / '=$' are style directives. So code renders as one gui_text per line.
+# gui_text_area(markdown=False) renders it. This used to be a listbox of one
+# gui_text per line, because the text area's mini-markdown eats source -- '#' is
+# a MAST comment AND an h1, '-' a bullet, any '[...]' a link reference that
+# replaces the line. That was the wrong reach: it reimplemented the wrapping and
+# scrolling the text area already had, and a fixed one-line row meant a wrapping
+# line overdrew its neighbour, worked around with ellipsis that truncated 42% of
+# the corpus.
 #
-# Two escapes are mandatory on every line:
-#   * braces, because gui_text f-string-formats any props containing '{'.
-#     '{{' survives compile_format_string as a literal '{'.
-#   * ':' and ';', because they would otherwise inject style properties.
-#     gui_text_escape() backtick-quotes the value (issue #569).
+# markdown=False turns the interpretation off; line_styles carries the colour
+# and the indent per line. No escaping needed either -- markdown=False skips the
+# '{}' interpolation, and there is no style string to inject ':' or ';' into.
 # ---------------------------------------------------------------------------
 
 GALLERY_CODE_FONT = "gui-1"
@@ -162,29 +164,32 @@ def gallery_label(text):
 gallery_code_escape = gallery_label
 
 
-def gallery_code_items(key):
-    """Source lines as listbox items: indent measured, color decided."""
-    items = []
+def gallery_code_lines(key):
+    """The snippet as (text, style) for a text area: one caller-supplied style
+    per line, carrying the colour and the indent.
+
+    The widget does not read markup or whitespace -- it renders. This side is
+    the one that knows a `#` line is a comment and knows how deep it sits, so
+    this side says so.
+    """
+    text = []
+    styles = []
     for line in gallery_source(key):
         stripped = line.strip()
-        indent = (len(line) - len(line.lstrip())) if stripped else 0
+        depth = (len(line) - len(line.lstrip())) if stripped else 0
         color = GALLERY_COLOR_COMMENT if stripped.startswith("#") else GALLERY_COLOR_CODE
-        items.append({"text": stripped, "indent": indent, "color": color})
-    return items
+        text.append(stripped)
+        styles.append({"style": f"font:{GALLERY_CODE_FONT};color:{color};",
+                       "indent": depth})
+    return chr(10).join(text), styles
 
 
-def gallery_code_row(item):
-    """Listbox item template for one line of code.
-
-    Sizes the ROW and returns None -- a template that returns a size leaves the
-    item section degenerate. Indent is drawn as left padding rather than spaces,
-    which the engine may trim out of a quoted value.
-    """
-    pad = GALLERY_CODE_INDENT_PX * item["indent"] // 4
-    gui_row(f"row-height: 1em; font:{GALLERY_CODE_FONT};")
-    gui_text(
-        f"$text:{gallery_code_escape(item['text'])};font:{GALLERY_CODE_FONT};color:{item['color']};",
-        f"padding: {pad}px, 0, 0, 0;")
+def gallery_code_view(key):
+    """Render a snippet. Wrapping and scrolling are the text area's job."""
+    from sbs_utils.procedural.gui import gui_text_area
+    body, styles = gallery_code_lines(key)
+    gui_row("row-height: 1fr;")
+    gui_text_area(body, markdown=False, line_styles=styles)
 
 
 # ---------------------------------------------------------------------------
@@ -237,9 +242,7 @@ def gallery_source_panel(key, area, title, color):
     """A read-only source panel with no Copy button -- the BROKEN half of a trap.
     Only the fix is worth copying."""
     gallery_frame(title, area, color)
-    gui_row("row-height: 1fr;")
-    gui_list_box(gallery_code_items(key), "",
-                 item_template=gallery_code_row, read_only=True)
+    gallery_code_view(key)
 
 
 # ---------------------------------------------------------------------------
