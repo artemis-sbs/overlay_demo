@@ -63,7 +63,10 @@
 # --- index ------------------------------------------------------------------
     gui_section(f"area: 1, 6, 24, {gallery_bottom};")
     gui_row("row-height: 1fr;")
-    gallery_nav = gui_list_box(gallery_nav_items(), "", item_template=gallery_nav_row, title_template=gallery_nav_title, select=True, collapsible=True)
+    # reveal: the index is rebuilt on every repaint, so a selection further down
+    # was restored but left off screen. Opt-in on the listbox -- this is the
+    # first caller to use it.
+    gallery_nav = gui_list_box(gallery_nav_items(), "", item_template=gallery_nav_row, title_template=gallery_nav_title, select=True, collapsible=True, reveal=True)
     gallery_nav.set_selected_index(gallery_nav_index(gallery_spec), False)
 
 # --- specimen ---------------------------------------------------------------
