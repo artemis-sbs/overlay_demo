@@ -82,6 +82,50 @@
                 jump gallery_viewer_screen
 # <<gallery
 
+        case "page_layout_playground":
+# >>gallery: page_layout_playground
+            # Sizing is unteachable in prose: you have to move it and watch. Each
+            # dropdown writes its var, and the row/column under test is built
+            # from those vars, so the boxes move as you pick.
+            default lp_row = "content"
+            default lp_col = "content"
+            default lp_font = "gui-3"
+
+            gui_section("area: 2, 6, 98, 14;")
+            gui_row("row-height: 1fr; font:gui-2;")
+            gui_text("$text:`row-height`;font:gui-2;color:#8cf;", "col-width: content;")
+            lp_rd = gui_drop_down(f"text: {lp_row}; list: 1fr, content, min-content, max-content, 2em, 90px", var="lp_row")
+            on gui_message(lp_rd):
+                jump gallery_viewer_screen
+            gui_text("$text:`col-width`;font:gui-2;color:#8cf;", "col-width: content;")
+            lp_cd = gui_drop_down(f"text: {lp_col}; list: 1fr, content, min-content, max-content, 25, 60", var="lp_col")
+            on gui_message(lp_cd):
+                jump gallery_viewer_screen
+            gui_text("$text:`font`;font:gui-2;color:#8cf;", "col-width: content;")
+            lp_fd = gui_drop_down(f"text: {lp_font}; list: gui-1, gui-2, gui-3, gui-4, gui-6", var="lp_font")
+            on gui_message(lp_fd):
+                jump gallery_viewer_screen
+
+            # Echo what the picks actually build. Reading the style string next
+            # to the result is most of the lesson.
+            gui_section("area: 2, 15, 98, 21;")
+            gui_row("row-height: 1fr; font:gui-1;")
+            gui_text(f"$text:{gallery_label('gui_row  row-height: ' + lp_row + ';  font:' + lp_font)};font:gui-1;color:#fc8;")
+            gui_row("row-height: 1fr; font:gui-1;")
+            gui_text(f"$text:{gallery_label('gui_text  col-width: ' + lp_col)};font:gui-1;color:#fc8;")
+
+            # The boxes. Fixed rows above and below, so a starved content row is
+            # visible as exactly that rather than as a mystery.
+            gui_section("area: 2, 23, 98, 92;")
+            gui_row("row-height: 2em; font:gui-2;")
+            gui_text("$text:`fixed 2em above`;font:gui-2;background:#234;")
+            gui_row(f"row-height: {lp_row}; font:{lp_font};")
+            gui_text(f"$text:`the row and column under test`;font:{lp_font};background:#243;", f"col-width: {lp_col};")
+            gui_text(f"$text:`sibling column, 1fr`;font:{lp_font};background:#325;")
+            gui_row("row-height: 1fr; font:gui-2;")
+            gui_text("$text:`1fr below -- takes whatever is left`;font:gui-2;background:#234;")
+# <<gallery
+
 # --- viewer chrome ----------------------------------------------------------
 # Deliberately last and deliberately small: the example above it should own the
 # screen, which is the whole point of it not being in the gallery's detail pane.

@@ -266,6 +266,29 @@ GALLERY_ENTRIES = [
     {"category": "Controls", "key": "blank_hole", "label": "gui_blank / gui_hole",
      "blurb": "Spacers. blank fills a cell; hole reserves columns so the next item spans them."},
 
+    # Layout. Every box is given a visible background, because the whole subject
+    # is where the edges land -- an unfilled demo of sizing shows nothing.
+    {"category": "Layout", "key": "layout_row_modes", "label": "row-height modes",
+     "blurb": "1fr shares the leftover, content hugs the text, a fixed em/px is taken off the top."},
+    {"category": "Layout", "key": "layout_col_modes", "label": "col-width modes",
+     "blurb": "content is natural width, min-content the widest unbreakable word, max-content the unwrapped line."},
+    {"category": "Layout", "key": "layout_arithmetic", "label": "size arithmetic",
+     "blurb": "1em+10px and 62-25px both work. Before v1.4.0 the +/- term was silently dropped."},
+    {"category": "Layout", "key": "layout_overflow", "label": "overflow",
+     "blurb": "spill (default), shrink, ellipsis, hide -- for text that cannot fit at any size."},
+
+    # Recipes are composed patterns rather than single widgets -- the shapes a
+    # real console is actually made of. A new author copies one of these, not a
+    # gui_text call.
+    {"category": "Recipes", "key": "recipe_watch_repaint", "label": "watch / repaint",
+     "blurb": "A sub-task polls state and calls gui_task_jump when it changes. The standard live panel."},
+    {"category": "Recipes", "key": "recipe_status_line", "label": "status line",
+     "blurb": "Confirmations must land on a surface that is actually shown. A console with no info panel drops them."},
+    {"category": "Recipes", "key": "recipe_item_templates", "label": "item_template shelf",
+     "blurb": "Four row templates to start from -- banded, two-column, icon+label+value, and a wrapping detail row."},
+    {"category": "Recipes", "key": "recipe_style_def", "label": "reusable style",
+     "blurb": "gui_style_def once, then hand it to every row -- one place to change the look."},
+
     # Some examples are a whole SCREEN, not a control -- an embedded engine view,
     # an absolutely-positioned region, a master/detail console. Squeezed into the
     # detail pane they would teach the wrong thing about proportion. These are
@@ -280,6 +303,9 @@ GALLERY_ENTRIES = [
     {"category": "Full page", "kind": "page", "key": "page_master_detail",
      "label": "listbox + detail console",
      "blurb": "The settled console shape: a titled listbox on the left acting on a detail panel."},
+    {"category": "Full page", "kind": "page", "key": "page_layout_playground",
+     "label": "layout playground",
+     "blurb": "Set row-height, col-width and font from dropdowns and watch the boxes move."},
 
     # Traps run BROKEN and FIXED side by side. Each needs two marked spans,
     # <key>_broken and <key>_fixed. Watching the broken one misbehave beats any

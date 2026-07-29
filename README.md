@@ -16,7 +16,10 @@ can span both files: the `gui_list_box` entry shows the MAST line **and** the Py
 | Category | What it holds |
 |---|---|
 | **Controls** | one entry per widget, live |
+| **Layout** | `row-height` / `col-width` modes, size arithmetic, `overflow` — every box backgrounded, because the subject is where the edges land |
+| **Recipes** | composed patterns: watch/repaint, a status line, a reusable style, and a shelf of four `item_template`s switched live |
 | **Traps** | each trap runs **BROKEN and FIXED side by side**, with both snippets under the panel that drew them. Only the fix gets a Copy button |
+| **Full page** | drawn on the **Gallery Viewer** console: an embedded engine view, a self-redrawing region, a master/detail console, and a **layout playground** whose dropdowns move the boxes under you |
 | **Overlays** | the two consoles below — every overlay kind, and the audience/fan-out checklist |
 
 Design and roadmap: `sbs_utils/GALLERY_PLAN.md`. Layout, Recipes and the AMD-authored

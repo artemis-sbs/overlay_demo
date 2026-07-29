@@ -271,6 +271,143 @@
 # <<gallery
 
 # ---------------------------------------------------------------------------
+# LAYOUT. Sizing is the hardest part of the system to teach in prose, so every
+# box here carries a background: the subject IS where the edges land, and an
+# unfilled demo of sizing shows nothing at all.
+# ---------------------------------------------------------------------------
+
+        case "layout_row_modes":
+# >>gallery: layout_row_modes
+            gui_row("row-height: 3em; font:gui-2;")
+            gui_text("$text:`fixed 3em -- taken off the top`;font:gui-2;background:#234;")
+            gui_row("row-height: content; font:gui-2;")
+            gui_text("$text:`content -- as tall as its own text`;font:gui-2;background:#243;")
+            gui_row("row-height: 1fr; font:gui-2;")
+            gui_text("$text:`1fr -- shares what is left`;font:gui-2;background:#325;")
+            gui_row("row-height: 1fr; font:gui-2;")
+            gui_text("$text:`1fr -- and so does this, equally`;font:gui-2;background:#325;")
+# <<gallery
+
+        case "layout_col_modes":
+# >>gallery: layout_col_modes
+            gui_row("row-height: 3em; font:gui-2;")
+            gui_text("$text:`content`;font:gui-2;background:#243;", "col-width: content;")
+            gui_text("$text:`1fr takes the rest`;font:gui-2;background:#325;")
+            gui_row("row-height: 3em; font:gui-2;")
+            # min-content is the widest unbreakable WORD; max-content the whole
+            # line, unwrapped. Same text, two very different asks.
+            gui_text("$text:`incomprehensible sizing`;font:gui-2;background:#243;", "col-width: min-content;")
+            gui_text("$text:`1fr`;font:gui-2;background:#325;")
+            gui_row("row-height: 3em; font:gui-2;")
+            gui_text("$text:`col-width is a percent of the SECTION`;font:gui-2;background:#432;", "col-width: 40;")
+            gui_text("$text:`the other 60`;font:gui-2;background:#325;")
+# <<gallery
+
+        case "layout_arithmetic":
+# >>gallery: layout_arithmetic
+            # em is one line of the ROW's font; padding top/bottom comes out of
+            # the row height, so ask for it back.
+            gui_row("row-height: 1em; font:gui-3;")
+            gui_text("$text:`1em of gui-3`;font:gui-3;background:#234;")
+            gui_row("row-height: 1em+16px; font:gui-3;")
+            gui_text("$text:`1em+16px -- room for padding`;font:gui-3;background:#243;", "padding: 0, 8px, 0, 8px;")
+            gui_row("row-height: 2em-8px; font:gui-3;")
+            gui_text("$text:`2em-8px -- subtraction works too`;font:gui-3;background:#325;")
+# <<gallery
+
+        case "layout_overflow":
+# >>gallery: layout_overflow
+            # For text that cannot fit AT ANY SIZE. Not a substitute for sizing
+            # the row properly. The engine does not clip by default -- spill
+            # draws straight over whatever is next to it.
+            gui_row("row-height: 2.2em; font:gui-2;")
+            gui_text("$text:`spill (default) -- drawn anyway, over its neighbor`;font:gui-2;background:#234;overflow:spill;", "col-width: 45;")
+            gui_blank()
+            gui_row("row-height: 2.2em; font:gui-2;")
+            gui_text("$text:`shrink -- scaled down until it fits the box`;font:gui-2;background:#243;overflow:shrink;", "col-width: 45;")
+            gui_blank()
+            gui_row("row-height: 2.2em; font:gui-2;")
+            gui_text("$text:`ellipsis -- cut, with a marker at the end`;font:gui-2;background:#325;overflow:ellipsis;", "col-width: 45;")
+            gui_blank()
+            gui_row("row-height: 2.2em; font:gui-2;")
+            gui_text("$text:`hide -- not drawn at all when it will not fit`;font:gui-2;background:#432;overflow:hide;", "col-width: 45;")
+            gui_blank()
+# <<gallery
+
+# ---------------------------------------------------------------------------
+# RECIPES. Composed patterns rather than single widgets -- the shapes a real
+# console is made of. A new author copies one of these, not a gui_text call.
+# ---------------------------------------------------------------------------
+
+        case "recipe_watch_repaint":
+# >>gallery: recipe_watch_repaint
+            # A panel usually cannot see the thing it displays change: the work
+            # happens in ANOTHER task. So watch the state and repaint when it
+            # moves. `on change` takes any expression, not just a variable.
+            #
+            # The heavier form -- a gui_sub_task_schedule watcher that calls
+            # gui_task_jump("repaint") -- is for when the check is expensive or
+            # needs its own delay loop. Same shape, more machinery.
+            recipe_state = get_inventory_value(client_id, "recipe_build", "idle")
+            gui_row("row-height: 2.4em; font:gui-3;")
+            gui_text(f"$text:`Build: {recipe_state}`;font:gui-3;color:#8cf;")
+            gui_row("row-height: 2.4em; font:gui-2;")
+            on gui_message(gui_button("Start a 3 second build")):
+                task_schedule(recipe_build_task, {"build_client": client_id})
+            on change get_inventory_value(client_id, "recipe_build", "idle"):
+                jump gallery_screen
+# <<gallery
+
+        case "recipe_status_line":
+# >>gallery: recipe_status_line
+            # Feedback must land on a surface that is ACTUALLY SHOWN. A console
+            # with no info panel silently drops comms_info_card, and the player
+            # sees nothing at all -- so a panel that confirms its own actions
+            # keeps a status line of its own.
+            default recipe_status = "Ready."
+            gui_row("row-height: 2.4em; font:gui-2;")
+            on gui_message(gui_button("Launch probe")):
+                recipe_status = "Probe away."
+                jump gallery_screen
+            gui_row("row-height: 2.4em; font:gui-2;")
+            on gui_message(gui_button("Recall probe")):
+                recipe_status = "Probe recalled."
+                jump gallery_screen
+            gui_row("row-height: 1fr;")
+            gui_blank()
+            gui_row("row-height: content; font:gui-2;")
+            gui_text(f"$text:{gallery_label(recipe_status)};font:gui-2;color:#8f8;background:#243;")
+# <<gallery
+
+        case "recipe_item_templates":
+# >>gallery: recipe_item_templates
+            # The same items, four ways. Swapping item_template is the whole
+            # difference -- the listbox, the data and the selection are untouched.
+            default recipe_tmpl = "plain"
+            recipe_rows = ~~[{"name": "Artemis", "hull": 100, "icon": "quest.job", "note": "flagship, all systems nominal"}, {"name": "Hera", "hull": 62, "icon": "bell", "note": "hull damage aft, damage control en route to deck four"}, {"name": "Aegis", "hull": 88, "icon": "asteroid", "note": "escorting the convoy"}]~~
+            gui_row("row-height: 2.4em; font:gui-2;")
+            recipe_dd = gui_drop_down(f"text: {recipe_tmpl}; list: plain, banded, icon_value, detail", var="recipe_tmpl")
+            on gui_message(recipe_dd):
+                jump gallery_screen
+            gui_row("row-height: 1fr;")
+            gui_list_box(recipe_rows, "", item_template=gallery_template_by_name(recipe_tmpl), select=True)
+# <<gallery
+
+        case "recipe_style_def":
+# >>gallery: recipe_style_def
+            # Declare the look once and hand it to every row. One place to
+            # change it, and the rows stop repeating a style string that will
+            # eventually disagree with itself.
+            recipe_row_style = gui_style_def("row-height: 2.2em; font:gui-3; padding: 8px, 0, 0, 0;")
+            gui_row(recipe_row_style)
+            gui_text("$text:`Shields`;font:gui-3;background:#234;")
+            gui_row(recipe_row_style)
+            gui_text("$text:`Reactor`;font:gui-3;background:#243;")
+            gui_row(recipe_row_style)
+            gui_text("$text:`Sensors`;font:gui-3;background:#325;")
+# <<gallery
+
+# ---------------------------------------------------------------------------
 # TRAPS. Each case opens a BROKEN frame and a FIXED frame of identical size, so
 # the difference is visible without reading either snippet. Captions sit outside
 # the marked spans so they never turn up in the source panel.
@@ -411,3 +548,11 @@
             jump gallery_screen
 
     await gui()
+
+
+# The other task in the watch/repaint recipe: the work the panel cannot see.
+=== recipe_build_task
+    set_inventory_value(build_client, "recipe_build", "building")
+    await delay_sim(3)
+    set_inventory_value(build_client, "recipe_build", "done")
+    ->END
