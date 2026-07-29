@@ -63,10 +63,11 @@
 # --- index ------------------------------------------------------------------
     gui_section(f"area: 1, 6, 24, {gallery_bottom};")
     gui_row("row-height: 1fr;")
-    # reveal: the index is rebuilt on every repaint, so a selection further down
-    # was restored but left off screen. Opt-in on the listbox -- this is the
-    # first caller to use it.
-    gallery_nav = gui_list_box(gallery_nav_items(), "", item_template=gallery_nav_row, title_template=gallery_nav_title, select=True, collapsible=True, reveal=True)
+    # reveal keeps the selection ON SCREEN; hint keeps it in the SAME SLOT.
+    # Without the hint a repaint starts the view at the top, so the row under the
+    # mouse moves out from under it -- visible, but not where you left it.
+    default gallery_nav_hint = None
+    gallery_nav = gui_list_box(gallery_nav_items(), "", item_template=gallery_nav_row, title_template=gallery_nav_title, select=True, collapsible=True, reveal=True, hint=gallery_nav_hint)
     gallery_nav.set_selected_index(gallery_nav_index(gallery_spec), False)
 
 # --- specimen ---------------------------------------------------------------
@@ -605,6 +606,9 @@
     on change gallery_nav.value:
         gallery_next = gallery_key_of(gallery_nav.get_value())
         if gallery_next is not None:
+            # Taken HERE, not after the jump: this widget is the one that has the
+            # view, and it never presents again once the page is rebuilt.
+            gallery_nav_hint = gallery_nav.get_selection_hint()
             gallery_spec = gallery_next
             jump gallery_screen
 
