@@ -462,3 +462,143 @@ def gallery_nav_row(item):
 def gallery_nav_title():
     gui_row("row-height: 1.6em; font:gui-2;")
     gui_text("$text:`CONTROL GALLERY`;font:gui-2;color:#8cf;")
+
+
+# ---------------------------------------------------------------------------
+# The Overlays category: a second surface, and the audience dial
+#
+# The Gallery Viewer is addressed by ROLE, never by client id -- the engine hands
+# those out, and the gallery has no way to know which one the viewer got. The
+# viewer adds "gallery_viewer" to itself on entry.
+# ---------------------------------------------------------------------------
+
+GALLERY_MORPH_TARGETS = ["gallery pages", "mainscreen", "helm", "weapons",
+                         "science", "engineering", "comms"]
+
+# The audience dial's picks, in the order they teach best: one screen, the other
+# screen, widening fan-out, then the two edge cases.
+GALLERY_AUDIENCES = ["this screen", "gallery viewer", "my ship", "mainscreen only",
+                     "my side", "all players", "a station"]
+
+
+def gallery_audience_list():
+    """The dial's `list:` -- a comma-separated string.
+
+    A FUNCTION, not the GALLERY_AUDIENCES constant: `import file.py` exports
+    module-level functions into the MAST namespace and NOT module data, so a bare
+    constant reads as an undefined name at eval time.
+    """
+    return ", ".join(GALLERY_AUDIENCES)
+
+
+def gallery_morph_list():
+    """Same, for the morph dropdown."""
+    return ", ".join(GALLERY_MORPH_TARGETS)
+
+
+def gallery_viewer_clients():
+    """Client ids currently showing the Gallery Viewer.
+
+    Usually one, possibly none -- everything here no-ops rather than complaining,
+    because a gallery with no second screen open is the normal single-monitor
+    case. The dial says so instead (see gallery_audience_note).
+    """
+    from sbs_utils.procedural.roles import role
+    return list(role("gallery_viewer"))
+
+
+def gallery_viewer_open():
+    return len(gallery_viewer_clients()) > 0
+
+
+def gallery_morph_viewer(which):
+    """Point the viewer at a console, or back at the gallery's own pages.
+
+    gui_reroute_client takes ONE client id, so this loops: two people could have
+    the viewer open, and each should morph. Returns how many were rerouted, so the
+    caller can report "nobody" rather than looking like it did nothing.
+    """
+    from sbs_utils.procedural.gui import gui_reroute_client
+    label = "gallery_viewer_restore" if which == "gallery pages" else "gallery_viewer_morph"
+    clients = gallery_viewer_clients()
+    for cid in clients:
+        gui_reroute_client(cid, label, {"morph_console": which})
+    return len(clients)
+
+
+def gallery_my_ship():
+    """The ship of the screen the gallery is being read on.
+
+    On the SERVER screen (client 0) there may be no assignment, and `to=None`
+    would then mean "nobody" rather than "everybody" -- so fall back to the first
+    player ship, and let gallery_audience_note() say that is what happened. An
+    audience specimen that silently resolves to nothing teaches the wrong lesson.
+    """
+    import sbs
+    from sbs_utils.helpers import FrameContext
+    from sbs_utils.procedural.roles import role
+    from sbs_utils.procedural.query import to_object_list
+    ship = sbs.get_ship_of_client(FrameContext.client_id)
+    if ship is not None:
+        return ship
+    players = to_object_list(role("__player__"))
+    return players[0].id if players else None
+
+
+def gallery_audience(which):
+    """Resolve a dial pick to an overlay `to=` audience.
+
+    This IS the lesson of the category: every one of these is an ordinary value
+    the overlay layer already knows how to expand -- a client id, a role set, a
+    ship id, a side name. There is no overlay-specific addressing to learn.
+    """
+    from sbs_utils.helpers import FrameContext
+    from sbs_utils.procedural.roles import role
+    if which == "gallery viewer":
+        return role("gallery_viewer")
+    if which in ("my ship", "mainscreen only"):
+        return gallery_my_ship()
+    if which == "my side":
+        return "tsn"
+    if which == "all players":
+        return role("__player__")
+    if which == "a station":
+        return role("station")
+    return FrameContext.client_id
+
+
+def gallery_audience_consoles(which):
+    """The `consoles=` filter for a pick. Only one pick uses it -- the filter is a
+    SECOND narrowing applied after `to=`, not an alternative to it."""
+    return "mainscreen" if which == "mainscreen only" else None
+
+
+def gallery_audience_note(which):
+    """What the pick resolves to, in words, shown beside the dial.
+
+    Phrased as the ARGUMENT you would type, because that is what the reader has to
+    write -- and it names the two cases that legitimately reach nobody, so an
+    overlay that does not appear is explained before it happens.
+    """
+    import sbs
+    from sbs_utils.helpers import FrameContext
+    if which == "this screen":
+        return "to=client_id -- only the screen you are reading"
+    if which == "gallery viewer":
+        n = len(gallery_viewer_clients())
+        if n == 0:
+            return "to=role('gallery_viewer') -- NOBODY yet: open the Gallery Viewer console"
+        return f"to=role('gallery_viewer') -- {n} screen(s): the other surface"
+    if which in ("my ship", "mainscreen only"):
+        own = sbs.get_ship_of_client(FrameContext.client_id) is not None
+        whose = "my_ship" if own else "the first player ship (this screen has none)"
+        if which == "mainscreen only":
+            return f"to={whose}, consoles='mainscreen' -- the console filter"
+        return f"to={whose} -- EVERY console of that ship"
+    if which == "my side":
+        return "to='tsn' -- a side NAME expands to every ship on it"
+    if which == "all players":
+        return "to=role('__player__') -- each ship expands to its consoles"
+    if which == "a station":
+        return "to=role('station') -- expect NOTHING: no console is aboard one"
+    return which

@@ -23,6 +23,12 @@
 # is available without connecting a console or having a ship). Hence the
 # `default` lives here rather than only in the console body.
 === gallery_screen
+    # This screen is NOT the viewer. Said out loud because the role is what the
+    # audience dial and the morph address, and roles outlive the page that added
+    # them: a client that visited the Gallery Viewer and then came back here would
+    # still answer to role("gallery_viewer") -- so "Morph the viewer" would morph
+    # the gallery you are reading it on. Every screen clears the roles it is not.
+    remove_role(client_id, "gallery_viewer")
     default gallery_spec = "text_basic"
     # Order no longer matters: the page restores the button to what was ASKED
     # for, so this holds across every rebuild. (Calling
@@ -84,6 +90,28 @@
         gallery_caption("It shows whichever full-page example you last picked here.")
     if not gallery_is_trap and not gallery_showing_page:
         gallery_frame(f"SPECIMEN   {gallery_entry_data['label']}", "26, 6, 99, 42")
+
+# --- the audience dial (Overlays category only) -----------------------------
+# Shared by every overlay specimen, and the reason they are specimens at all: the
+# old demo console had twelve near-identical buttons whose only difference was the
+# `to=` argument, which is exactly the thing you cannot see from a button.
+#
+# One dial, and the line under it says what the pick RESOLVES to. Built before the
+# match so `overlay_to` is in scope for every case below.
+    if gallery_entry_data.get("category") == "Overlays":
+# >>gallery: overlay_audience_dial
+        default overlay_to_pick = "this screen"
+        gui_row("row-height: 1.8em; font:gui-1;")
+        gui_text("$text:`Fire at`;font:gui-1;color:#8cf;", "col-width: content;")
+        overlay_dial = gui_drop_down(f"text: {overlay_to_pick}; list: {gallery_audience_list()}", var="overlay_to_pick")
+        on gui_message(overlay_dial):
+            jump gallery_screen
+        # A client id, a role set, a ship id, a side name -- all ordinary values.
+        overlay_to = gallery_audience(overlay_to_pick)
+        overlay_consoles = gallery_audience_consoles(overlay_to_pick)
+        gui_row("row-height: 1.6em; font:gui-1;")
+        gui_text(f"$text:{gallery_label(gallery_audience_note(overlay_to_pick))};font:gui-1;color:#fc8;")
+# <<gallery
 
     match gallery_spec:
         case "text_basic":
@@ -574,6 +602,225 @@
             gui_text("$text:`fixed 2em`;font:gui-2;background:#234;")
             gui_row("row-height: content; font:gui-2;")
             gui_text("$text:`content row -- sized to its text`;font:gui-2;color:#8f8;background:#243;")
+# <<gallery
+
+
+# ============================================================================
+# OVERLAYS -- one specimen per kind, all firing at the audience dial above.
+#
+# These were two consoles and 31 buttons. As specimens each one gets its source
+# panel and its notes for free, which answers the gallery's founding complaint: a
+# button that fires an overlay does not show you the call that fired it.
+#
+# None of these repaints the page. An overlay draws on its own layer, so the page
+# underneath is untouched -- that is the point of the system.
+# ============================================================================
+        case "overlay_hero_card":
+# >>gallery: overlay_hero_card
+            gui_row("row-height: content;")
+            on gui_message(gui_button("Show the hero card")):
+                overlay_hero("CHAPTER ONE", subtitle="The Long Dark", to=overlay_to, consoles=overlay_consoles, seconds=8)
+# <<gallery
+
+        case "overlay_hero_scrim":
+# >>gallery: overlay_hero_scrim
+            # A hero card over a bright 3D view is unreadable. `background` lays a
+            # translucent scrim under the rows; `letterbox` adds cinematic bars and
+            # lifts WITH the card, so one call gives a framed title card.
+            gui_row("row-height: content;")
+            on gui_message(gui_button("Scrim only")):
+                overlay_hero("CHAPTER ONE", subtitle="on a translucent scrim", background="#000a", to=overlay_to, consoles=overlay_consoles, seconds=8)
+            gui_row("row-height: content;")
+            on gui_message(gui_button("Scrim and letterbox")):
+                overlay_hero("CHAPTER ONE", subtitle="framed by cinematic bars", background="#000a", letterbox="Approaching the anomaly", seconds=6, to=overlay_to, consoles=overlay_consoles)
+# <<gallery
+
+        case "overlay_banner_top":
+# >>gallery: overlay_banner_top
+            gui_row("row-height: content;")
+            on gui_message(gui_button("Red alert banner")):
+                overlay_banner("RED ALERT", to=overlay_to, consoles=overlay_consoles, seconds=8)
+            gui_row("row-height: content;")
+            # background=None is not the default -- it removes the fill entirely,
+            # for a banner over artwork that should not be boxed.
+            on gui_message(gui_button("No fill")):
+                overlay_banner("BARE TEXT BANNER", background=None, to=overlay_to, consoles=overlay_consoles, seconds=8)
+# <<gallery
+
+        case "overlay_long_text":
+# >>gallery: overlay_long_text
+            # Text longer than the slot is split into TIMED PARTS and shown in
+            # sequence -- it is not clipped and the font does not shrink. So
+            # `seconds` budgets the WHOLE message, not each part: set it too low
+            # and the last part flashes past. Give a long banner room.
+            gui_row("row-height: content;")
+            on gui_message(gui_button("Long banner 30s")):
+                overlay_banner("Long range sensors report a raider wing crossing the neutral zone on an intercept course. All ships are ordered to red alert and must hold station until the escort arrives.", seconds=30, to=overlay_to, consoles=overlay_consoles)
+            gui_row("row-height: content;")
+            on gui_message(gui_button("Long lower third")):
+                overlay_lower_third("Admiral Harkin", "Hold the line, commander. The convoy is three minutes out and every one of those freighters is carrying people who are counting on us to still be here when they arrive.", to=overlay_to, consoles=overlay_consoles)
+# <<gallery
+
+        case "overlay_toast_corner":
+# >>gallery: overlay_toast_corner
+            # The lightest overlay: a corner note that expires by itself. For
+            # anything the player might want again, pair it with a durable record
+            # (see announce) -- a toast is gone in three seconds.
+            gui_row("row-height: content;")
+            on gui_message(gui_button("Objective updated")):
+                overlay_toast("Objective updated", to=overlay_to, consoles=overlay_consoles)
+# <<gallery
+
+        case "overlay_third":
+# >>gallery: overlay_third
+            # The broadcast lower third: a name and a line. This is the slot the
+            # gallery's own tour narrates through.
+            gui_row("row-height: content;")
+            on gui_message(gui_button("Admiral speaks")):
+                overlay_lower_third("Admiral Harkin", "Hold the line, commander.", to=overlay_to, consoles=overlay_consoles)
+# <<gallery
+
+        case "overlay_modal":
+# >>gallery: overlay_modal
+            # A modal RETURNS a choice, so it has to be awaited -- and this task
+            # cannot await, it is already sitting in await gui(). Hence the
+            # background task: it awaits the answer, then acts on it.
+            gui_row("row-height: content;")
+            on gui_message(gui_button("Ask a question")):
+                task_schedule(demo_choice, {"choice_client": overlay_to})
+# <<gallery
+
+        case "overlay_hud_sticky":
+# >>gallery: overlay_hud_sticky
+            # A HUD is STICKY -- no `seconds`, so it stays until cleared. Live
+            # values come from a watcher task calling overlay_hud_update, which
+            # replaces the rows without rebuilding the slot.
+            #
+            # `controls` are buttons INSIDE the overlay: each names a label to
+            # schedule and the data to hand it.
+            gui_row("row-height: content;")
+            on gui_message(gui_button("Show the HUD")):
+                hud_controls = ~~[{"label": "Toggle Alert", "action": "hud_toggle_alert", "data": {"hud_client": client_id}}]~~
+                hud_rows = ~~{"Tick": 0, "Alert": "GREEN"}~~
+                overlay_hud(rows=hud_rows, controls=hud_controls, title="SHIP HUD", to=overlay_to, consoles=overlay_consoles)
+                task_schedule(hud_watch, {"hud_client": client_id})
+# <<gallery
+
+        case "overlay_fullscreen":
+# >>gallery: overlay_fullscreen
+            # The fullscreen slot: bars, a colour wash, a credit roll. All three
+            # share one slot, so firing a second replaces the first.
+            gui_row("row-height: content;")
+            on gui_message(gui_button("Letterbox")):
+                overlay_letterbox("Approaching the anomaly...", to=overlay_to, consoles=overlay_consoles)
+            gui_row("row-height: content;")
+            on gui_message(gui_button("Damage flash")):
+                overlay_flash("#f006", to=overlay_to, consoles=overlay_consoles)
+            gui_row("row-height: content;")
+            on gui_message(gui_button("Roll credits")):
+                credit_lines = ~~["Directed by You", "Overlay System by Claude", "Starring Artemis", "Best Boy: DS1", "Catering: The Casino", "Special Thanks: MAST"]~~
+                overlay_credits(credit_lines, title="CONTROL GALLERY", roll=2, window=3, to=overlay_to, consoles=overlay_consoles)
+# <<gallery
+
+        case "overlay_from_amd":
+# >>gallery: overlay_from_amd
+            # The declarative route: the card's title, body and art are AUTHORED in
+            # overlays.amd and fired by key. No builder code, and a writer can
+            # change the words without opening a .mast file.
+            gui_row("row-height: content;")
+            on gui_message(gui_button("Show AMD card ch1")):
+                overlay_amd("ch1", to=overlay_to, consoles=overlay_consoles)
+# <<gallery
+
+        case "overlay_custom_kind":
+# >>gallery: overlay_custom_kind
+            # A custom KIND, authored as a //overlay/<kind> route (see story.mast)
+            # -- no Python and no registration call. The content fields arrive in
+            # the route as task variables, so `title=` is read there as `title`.
+            gui_row("row-height: content;")
+            on gui_message(gui_button("Show the custom card")):
+                overlay_show("center_hero", "custom_card", title="MAST BUILDER", sub="built by a label", to=overlay_to, consoles=overlay_consoles)
+# <<gallery
+
+        case "overlay_by_signal":
+# >>gallery: overlay_by_signal
+            # For code that has no business calling the GUI layer -- a brain, a
+            # damage route, a Python module. The signal crosses to the server,
+            # which fans it out (see //shared/signal/overlay in story.mast).
+            gui_row("row-height: content;")
+            on gui_message(gui_button("Show via signal")):
+                signal_fields = ~~{"title": "VIA SIGNAL", "subtitle": "shared-signal dispatch"}~~
+                signal_data = ~~{"to": overlay_to, "slot": "center_hero", "kind": "hero", "fields": signal_fields}~~
+                signal_emit("overlay", signal_data)
+# <<gallery
+
+        case "overlay_clearing":
+# >>gallery: overlay_clearing
+            # Clearing is addressed exactly like showing. No slot clears them ALL
+            # for that audience; naming one clears just that -- which is what you
+            # want when a sticky HUD should outlive a chapter card.
+            gui_row("row-height: content;")
+            on gui_message(gui_button("Clear every slot")):
+                overlay_clear(to=overlay_to, consoles=overlay_consoles)
+            gui_row("row-height: content;")
+            on gui_message(gui_button("Clear the hero slot only")):
+                overlay_clear("center_hero", to=overlay_to, consoles=overlay_consoles)
+# <<gallery
+
+        case "announce_levels":
+# >>gallery: announce_levels
+            # announce() is the one to reach for by default: it picks the overlay
+            # for the LEVEL and writes the durable record to match, so the player
+            # can find the message again after it lifts.
+            #
+            #   chapter -> hero + info card      alert  -> banner + card
+            #   hail    -> lower third + comms   status -> toast, NO record
+            gui_row("row-height: content;")
+            on gui_message(gui_button("chapter")):
+                announce("The long dark begins here, commander.", title="CHAPTER TWO", level="chapter", to=overlay_to, consoles=overlay_consoles)
+            gui_row("row-height: content;")
+            on gui_message(gui_button("alert")):
+                announce("Raiders have crossed the line.", title="TSN Command", level="alert", to=overlay_to, consoles=overlay_consoles)
+            gui_row("row-height: content;")
+            on gui_message(gui_button("hail")):
+                announce("Hold the line, commander. We are counting on you.", title="Starbase Phoenix", level="hail", sender=station_id, to=overlay_to, consoles=overlay_consoles)
+            gui_row("row-height: content;")
+            on gui_message(gui_button("status")):
+                announce("Cargo ejected", level="status", to=overlay_to, consoles=overlay_consoles)
+# <<gallery
+
+        case "announce_clamp":
+# >>gallery: announce_clamp
+            # A title is a HEADLINE: clamped to one readable line before it reaches
+            # the slot. The BODY is the record and can run as long as it needs to,
+            # because the card it lands on scrolls.
+            gui_row("row-height: content;")
+            on gui_message(gui_button("Announce an over-long title")):
+                announce("This body text is the durable record and can run long.", title="A title so long it must be clamped to a single readable ASCII line before it ever reaches the overlay slot", level="alert", to=overlay_to, consoles=overlay_consoles)
+# <<gallery
+
+        case "overlay_morph_viewer":
+# >>gallery: overlay_morph_viewer
+            # The Gallery Viewer becomes a REAL console on request -- which is how
+            # this mission tests draw-layer stacking over a live engine view, and
+            # consoles="mainscreen", without the whole crew set enabled.
+            #
+            # The pattern is LM's director addon: reroute a client to a label that
+            # assigns a ship and calls gui_console(). See gallery_pages.mast for
+            # the part that matters -- the console ROLE, not just CONSOLE_TYPE.
+            default morph_pick = "mainscreen"
+            gui_row("row-height: 1.8em; font:gui-1;")
+            gui_text("$text:`Viewer becomes`;font:gui-1;color:#8cf;", "col-width: content;")
+            morph_dial = gui_drop_down(f"text: {morph_pick}; list: {gallery_morph_list()}", var="morph_pick")
+            on gui_message(morph_dial):
+                jump gallery_screen
+            gui_row("row-height: content;")
+            on gui_message(gui_button("Morph the viewer")):
+                morph_count = gallery_morph_viewer(morph_pick)
+                if morph_count == 0:
+                    overlay_toast("No Gallery Viewer is open.", to=client_id, seconds=4)
+                if morph_count > 0:
+                    overlay_toast(f"Viewer is now {morph_pick}", to=client_id, seconds=4)
 # <<gallery
 
 # --- source -----------------------------------------------------------------

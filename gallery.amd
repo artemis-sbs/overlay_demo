@@ -459,3 +459,247 @@ reading the string next to the result is most of the lesson.
 
 A fixed row sits above the row under test and a `1fr` row below it, so a starved
 content row reads as exactly that rather than as a mystery.
+
+## [who sees it](overlay_audience_dial)
+---
+Category: Overlays
+---
+Every specimen below fires at this dial. `to=` takes ordinary values.
+
+There is no overlay-specific addressing to learn. Whatever you would use to name
+an audience anywhere else in the library works here:
+- a CLIENT ID -- one screen, and the narrowest thing you can target
+- a ROLE SET (`role("__player__")`, `role("gallery_viewer")`) -- expanded for you
+- a SHIP ID -- every console aboard that ship
+- a SIDE NAME (`"tsn"`) -- every ship on it, so every console on all of them
+
+`consoles=` is a SECOND narrowing applied after `to=`, not an alternative to it:
+`to=my_ship, consoles="mainscreen"` means the mainscreen of that ship and nothing
+else.
+
+The line under the dial says what your pick resolves to. Two picks legitimately
+reach NOBODY, and both are worth firing on purpose: `a station` (no console is
+aboard one) and `gallery viewer` before you have opened that console. An overlay
+that does not appear is nearly always an audience that resolved to nothing.
+
+## [hero card](overlay_hero_card)
+---
+Category: Overlays
+---
+The chapter card: big, centered, and gone after `seconds`.
+
+The overlay for a moment that should stop the room. It takes an optional visual
+above the title -- `face`, `ship`, `icon` or `image`, first one set wins.
+- Always pass `seconds` unless you mean it to STAY. Without it the card is sticky
+  and something has to clear it.
+- The title is a headline, not a paragraph. Long text is split into timed parts
+  (see "long text").
+
+## [hero card on a scrim](overlay_hero_scrim)
+---
+Category: Overlays
+---
+`background` keeps it legible over a bright 3D view; `letterbox` frames it.
+
+An overlay draws over whatever the engine is rendering, and a starfield with a
+sun in it will beat white text.
+- `background="#000a"` -- a translucent scrim under the card's rows. Cheaper and
+  less intrusive than the fullscreen slot, because the view still reads through.
+- `letterbox=True` (or a string, used as the line between the bars) drops the
+  cinematic bars too, and they lift WITH the card. One call, framed title card.
+
+## [top banner](overlay_banner_top)
+---
+Category: Overlays
+---
+One line across the top. The alert, not the conversation.
+
+- `background=None` removes the fill entirely -- for a banner over artwork that
+  should not be boxed in. It is not the default.
+- A banner is a state, not an event: RED ALERT earns one, "cargo ejected" wants a
+  toast.
+
+## [lower third](overlay_third)
+---
+Category: Overlays
+---
+A name and a line, broadcast-style. Somebody is speaking.
+
+The slot to use when the words have a SOURCE. This is what the gallery's own tour
+narrates through, which is also the warning: it sits at x 20..80, y 74..94, so a
+panel running to y 99 draws underneath it.
+
+## [corner toast](overlay_toast_corner)
+---
+Category: Overlays
+---
+The lightest overlay. Expires by itself, interrupts nothing.
+
+For acknowledgements: picked up, docked, objective updated.
+- It is gone in three seconds and leaves NO record. If the player might want it
+  again, use `announce(level="status")`, or pair the toast with an info card.
+
+## [long text becomes timed parts](overlay_long_text)
+---
+Category: Overlays
+---
+Text too long for the slot is split and played in sequence, not clipped.
+
+The font does not shrink and nothing is truncated, which has one consequence
+worth knowing before you are surprised by it:
+- `seconds` budgets the WHOLE message, not each part. Too low and the last part
+  flashes past. A 200-character banner wants 30 seconds, not 8.
+- So a long overlay is a small cutscene. If you do not want that, shorten the
+  text or put it in a durable record and let `announce()` write the headline.
+
+## [modal choice](overlay_modal)
+---
+Category: Overlays
+---
+The one overlay that RETURNS something, so it has to be awaited.
+
+`overlay_choice` resolves to the button the player pressed. That is why the
+specimen schedules a task instead of calling it inline:
+- a GUI task is already sitting in `await gui()` and cannot await anything else
+- so the modal is awaited in a BACKGROUND task, which then acts on the answer
+- clear the slot yourself afterwards -- a question that has been answered should
+  not still be on screen
+
+## [sticky HUD](overlay_hud_sticky)
+---
+Category: Overlays
+---
+No `seconds`, so it stays. A watcher task updates the rows in place.
+
+The persistent-readout shape, and the only overlay you deliberately leave up.
+- `overlay_hud_update` replaces the row VALUES without rebuilding the slot, so a
+  once-a-second watcher is cheap.
+- `controls` are buttons INSIDE the overlay. Each names a label to schedule and
+  the data to hand it -- so the HUD can act, not just report.
+- Something must clear it. A HUD outliving the screen it described is the failure
+  mode this category exists to make obvious.
+
+## [fullscreen slot](overlay_fullscreen)
+---
+Category: Overlays
+---
+Bars, a colour wash, a credit roll -- all three share one slot.
+
+So firing a second replaces the first, which is usually what you want and
+occasionally a surprise.
+- `overlay_letterbox` -- cinematic bars, with an optional line between them.
+- `overlay_flash` -- a brief colour wash. Damage, a jump, a hit. Keep it short;
+  it covers the whole screen.
+- `overlay_credits` -- a rolling list. `roll` is seconds per entry, `window` how
+  many are visible at once.
+
+## [declared in AMD](overlay_from_amd)
+---
+Category: Overlays
+---
+The card's words and art authored in a .amd file, fired by key.
+
+The declarative route, and the one to prefer for story content: a writer can
+change the words without opening a .mast file, and the same key can be fired from
+anywhere.
+- The mission loads the file once (`amd_overlays(...)` in story.mast) and after
+  that `overlay_amd("ch1")` is the whole call site.
+- `fields=` still interpolates, so a declared card can carry a ship name.
+
+## [a custom kind](overlay_custom_kind)
+---
+Category: Overlays
+---
+Author a `//overlay/<kind>` route. No Python, no registration call.
+
+The sugar form for a card shape the built-ins do not cover. The route builds rows
+exactly as a GUI label does.
+- Content fields arrive as TASK VARIABLES: `overlay_show(..., title="x")` is read
+  in the route as `title`.
+- `overlay_register` / `overlay_register_label` are the explicit equivalents, for
+  a builder that lives in Python.
+
+## [fired by signal](overlay_by_signal)
+---
+Category: Overlays
+---
+For code with no business calling the GUI layer.
+
+A brain, a damage route, a Python module deep in a mission -- none of them should
+be building widgets. Emit a signal instead and let one server-side route fan it
+out (`//shared/signal/overlay` in story.mast).
+- `//shared/signal/...`, NOT `//signal/...`. A plain signal route runs once per
+  connected console, so the overlay would be fired N times.
+- `signal_emit` is safe when there is no MAST context, which is what makes it
+  callable from Python that might run outside a task.
+
+## [clearing](overlay_clearing)
+---
+Category: Overlays
+---
+Addressed exactly like showing -- same `to=`, same `consoles=`.
+
+- No slot argument clears every slot for that audience.
+- Naming one clears just that, which is what you want when a sticky HUD should
+  outlive a chapter card.
+- Overlays do NOT clear themselves when the page underneath is rerouted. A screen
+  that changes what it IS should clear its own overlays first -- see how the
+  Gallery Viewer's morph does it.
+
+## [announce()](announce_levels)
+---
+Category: Overlays
+---
+The one to reach for by default: the overlay AND its durable record.
+
+An overlay lifts and is gone. If the message mattered, the player needs to find
+it again -- so `announce()` writes the record and picks the overlay to match the
+LEVEL:
+
+| level | overlay | record |
+|---|---|---|
+| `chapter` | hero card | info-panel card |
+| `alert` | top banner | info-panel card |
+| `hail` | lower third | comms message |
+| `status` | corner toast | none |
+
+- `sender=` on a hail makes the comms message come FROM that object.
+- `status` is the deliberate exception: an acknowledgement is not worth a record.
+- Reach for the raw `overlay_*` calls when you want the effect WITHOUT a record --
+  a flash, a letterbox, a HUD.
+
+## [a title is a headline](announce_clamp)
+---
+Category: Overlays
+---
+Titles are clamped to one line. Bodies can run long.
+
+The two halves of an `announce()` have different jobs, and the length rules follow
+from that:
+- the TITLE goes to the overlay slot, so it is clamped to a single readable line.
+  Write it as a headline and it will never be clamped for you.
+- the BODY is the durable record. It can run as long as it needs to, because the
+  card it lands on scrolls.
+
+## [morph the viewer](overlay_morph_viewer)
+---
+Category: Overlays
+---
+Turn the Gallery Viewer into any console, so you have a second surface.
+
+The audience specimens need two screens, and one of them a mainscreen, or half of
+what they teach cannot be seen. Rather than enabling the whole crew set, the
+Viewer becomes whichever console you pick.
+- The pattern is LM's **director** addon: `gui_reroute_client(target, label, data)`
+  onto a label that assigns a ship and calls `gui_console(name)`.
+- Turning a console OFF does not unregister it. `HELM_CONSOLE_ENABLED = False`
+  only removes it from the selection screen, so `gui_console("helm")` still works
+  -- which is what lets this mission offer two consoles and still morph into seven.
+- Setting `CONSOLE_TYPE` is NOT enough. Audience narrowing goes through
+  `any_role()`, so a screen without the console ROLE is invisible to overlays,
+  `announce()` and comms targeting -- and the message is dropped in silence.
+- Clear the old console roles on the way, or a screen that used to be a mainscreen
+  keeps answering as one.
+- The morph clears that client's overlays first. A hero card left over from the
+  gallery page has no business on a mainscreen, and it stops a region outliving
+  the page that established it.

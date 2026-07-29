@@ -1,8 +1,12 @@
-# Control Gallery -- the map, and the Overlays category.
+# Control Gallery -- the map, and the mission's shared plumbing.
 #
-# The gallery shell and the Controls category live in gallery.mast; see
-# sbs_utils/GALLERY_PLAN.md. The two consoles below are the Overlays category:
-# every overlay kind one button away, plus the audience/fan-out checklist.
+# The gallery itself is in gallery.mast (shell + Controls/Layout/Recipes/Traps/
+# Overlays) and gallery_pages.mast (the Gallery Viewer and the full-page
+# examples). See sbs_utils/GALLERY_PLAN.md.
+#
+# What is left HERE is what the specimens need but do not own: the map, the
+# labels an overlay schedules (a modal, a HUD watcher), the //overlay route that
+# shows a custom kind, and the signal bridge.
 #
 import gallery_code.py
 import gallery_specimens.py
@@ -50,6 +54,26 @@ Properties:
     sbs.suppress_client_connect_dialog(0)
     # Per client; 0 is the server machine, 1 turns transparency ON.
     sbs.transparent_options_button(0, 1)
+    # ONE console, and it is the gallery's own.
+    #
+    # The crew consoles were here to give the overlay demo a live 3D view and a
+    # second surface to fan out to. The Gallery Viewer does both now -- it morphs
+    # into any of them on request (see gallery_pages.mast) -- so offering all
+    # seven on the selection screen just buries the two that are the mission.
+    #
+    # A PLAIN assignment, not `default`: LM's consoles addon declares these with
+    # `default ... = True` and addon load order is not deterministic. Plain
+    # assignment wins whichever way the order falls -- if this runs first the
+    # addon's `default` leaves it alone, and if the addon runs first this
+    # overwrites it. A `default` here would be a coin toss.
+    HELM_CONSOLE_ENABLED = False
+    WEAPONS_CONSOLE_ENABLED = False
+    ENGINEERING_CONSOLE_ENABLED = False
+    COMMS_CONSOLE_ENABLED = False
+    SCIENCE_CONSOLE_ENABLED = False
+    MAINSCREEN_CONSOLE_ENABLED = False
+    CINEMATIC_CONSOLE_ENABLED = False
+
     # The map IS the gallery: starting it puts the browser on the SERVER screen,
     # which needs no console and no ship -- what a tool wants to be. It replaces
     # LM's server main-screen (and the pause/resume region on it); "Main screen"
@@ -61,131 +85,6 @@ Properties:
     gui_reroute_server("gallery_screen")
     ->END
 
-@console/overlay_demo !0 ^1 "Overlay Demo"
-    " Fire overlays over the live view -- they draw on top via draw_layer.
-    gui_layout_widget("3dview")
-    gui_section("area: 2, 30, 36, 99;")
-    gui_row("row-height: content;")
-    """Overlay Demo"""
-    gui_row("row-height: content;")
-    on gui_message(gui_button("Hero Card")):
-        overlay_hero("CHAPTER ONE", subtitle="The Long Dark")
-    gui_row("row-height: content;")
-    on gui_message(gui_button("Top Banner")):
-        overlay_banner("RED ALERT")
-    gui_row("row-height: content;")
-    on gui_message(gui_button("Corner Toast")):
-        overlay_toast("Objective updated")
-    gui_row("row-height: content;")
-    on gui_message(gui_button("Lower Third")):
-        overlay_lower_third("Admiral Harkin", "Hold the line, commander.")
-    gui_row("row-height: content;")
-    on gui_message(gui_button("Choice Modal")):
-        task_schedule(demo_choice, {"choice_client": client_id})
-    gui_row("row-height: content;")
-    on gui_message(gui_button("Show HUD")):
-        overlay_hud(rows={"Tick": 0, "Alert": "GREEN"}, controls=[{"label": "Toggle Alert", "action": "hud_toggle_alert", "data": {"hud_client": client_id}}], title="SHIP HUD", to=client_id)
-        task_schedule(hud_watch, {"hud_client": client_id})
-    gui_row("row-height: content;")
-    on gui_message(gui_button("AMD Hero (ch1)")):
-        overlay_amd("ch1", to=client_id)
-    gui_row("row-height: content;")
-    on gui_message(gui_button("MAST Label Card")):
-        overlay_show("center_hero", "custom_card", title="MAST BUILDER", sub="built by a label")
-    gui_row("row-height: content;")
-    on gui_message(gui_button("Complete Quest")):
-        quest_mark_complete(sbs.get_ship_of_client(client_id), "demo_quest")
-    gui_row("row-height: content;")
-    on gui_message(gui_button("Hero via Signal")):
-        signal_emit("overlay", {"to": client_id, "slot": "center_hero", "kind": "hero", "fields": {"title": "VIA SIGNAL", "subtitle": "shared-signal dispatch"}})
-    gui_row("row-height: content;")
-    on gui_message(gui_button("Hero + Scrim")):
-        overlay_hero("CHAPTER ONE", subtitle="on a translucent scrim", background="#000a")
-    gui_row("row-height: content;")
-    on gui_message(gui_button("Hero + Letterbox")):
-        overlay_hero("CHAPTER ONE", subtitle="framed by cinematic bars", background="#000a", letterbox="Approaching the anomaly", seconds=6)
-    gui_row("row-height: content;")
-    on gui_message(gui_button("Long Banner (timed parts)")):
-        overlay_banner("Long range sensors report a raider wing crossing the neutral zone on an intercept course. All ships are ordered to red alert and must hold station until the escort arrives.", seconds=30)
-    gui_row("row-height: content;")
-    on gui_message(gui_button("Long Subtitle (timed parts)")):
-        overlay_lower_third("Admiral Harkin", "Hold the line, commander. The convoy is three minutes out and every one of those freighters is carrying people who are counting on us to still be here when they arrive.")
-    gui_row("row-height: content;")
-    on gui_message(gui_button("Banner, no fill")):
-        overlay_banner("BARE TEXT BANNER", background=None)
-    gui_row("row-height: content;")
-    on gui_message(gui_button("Letterbox")):
-        overlay_letterbox("Approaching the anomaly...")
-    gui_row("row-height: content;")
-    on gui_message(gui_button("Flash")):
-        overlay_flash("#f006")
-    gui_row("row-height: content;")
-    on gui_message(gui_button("Roll Credits")):
-        overlay_credits(["Directed by You", "Overlay System by Claude", "Starring Artemis", "Best Boy: DS1", "Catering: The Casino", "Special Thanks: MAST"], title="OVERLAY DEMO", roll=2, window=3)
-    gui_row("row-height: content;")
-    on gui_message(gui_button("Clear All")):
-        overlay_clear()
-    await gui()
-
-# ============================================================================
-# AUDIENCE + announce() console -- the P0 checklist for the adoption work.
-#
-# Every button on the Overlay Demo console targets ONE console (to=client_id).
-# These target a SHIP, a SIDE, or every player, and pair the overlay with its
-# durable record. Verify with TWO OR MORE consoles connected -- ideally one of
-# them a main screen -- and watch which screens react.
-# ============================================================================
-@console/overlay_audience !0 ^2 "Overlay Audience"
-    " Who sees it. Fan-out by ship / side, the mainscreen filter, and announce().
-    gui_layout_widget("3dview")
-    my_ship = sbs.get_ship_of_client(client_id)
-    gui_section("area: 2, 22, 40, 99;")
-    gui_row("row-height: content;")
-    """Audience + announce"""
-
-# --- fan-out ----------------------------------------------------------------
-    gui_row("row-height: content;")
-    on gui_message(gui_button("1. To my SHIP (every console)")):
-        overlay_banner("TO MY SHIP", to=my_ship, seconds=8)
-    gui_row("row-height: content;")
-    on gui_message(gui_button("2. To my ship, MAINSCREEN only")):
-        overlay_hero("MAINSCREEN ONLY", subtitle="other consoles stay clear", to=my_ship, consoles="mainscreen", seconds=8)
-    gui_row("row-height: content;")
-    on gui_message(gui_button("3. To my SIDE (all tsn ships)")):
-        overlay_banner("SIDE WIDE ALERT", to="tsn", seconds=8)
-    gui_row("row-height: content;")
-    on gui_message(gui_button("4. To ALL player ships")):
-        overlay_toast("Everyone gets this", to=role("__player__"), seconds=6)
-    gui_row("row-height: content;")
-    on gui_message(gui_button("5. To a STATION (expect nobody)")):
-        overlay_banner("SHOULD NOT APPEAR", to=station_id, seconds=6)
-
-# --- announce(): overlay AND record -----------------------------------------
-# After each of these, check the INFO PANEL / comms as well as the overlay.
-    gui_row("row-height: content;")
-    on gui_message(gui_button("6. announce chapter (hero + card)")):
-        announce("The long dark begins here, commander.", title="CHAPTER TWO", level="chapter", ship=my_ship)
-    gui_row("row-height: content;")
-    on gui_message(gui_button("7. announce alert (banner + card)")):
-        announce("Raiders have crossed the line.", title="TSN Command", level="alert", ship=my_ship)
-    gui_row("row-height: content;")
-    on gui_message(gui_button("8. announce hail (third + comms)")):
-        announce("Hold the line, commander. We are counting on you.", title="Starbase Phoenix", level="hail", ship=my_ship, sender=station_id)
-    gui_row("row-height: content;")
-    on gui_message(gui_button("9. announce status (toast, no record)")):
-        announce("Cargo ejected", level="status", ship=my_ship)
-    gui_row("row-height: content;")
-    on gui_message(gui_button("10. announce clamps a long headline")):
-        announce("This body text is the durable record and can run long.", title="A title so long it must be clamped to a single readable ASCII line before it ever reaches the overlay slot", level="alert", ship=my_ship)
-
-    gui_row("row-height: content;")
-    on gui_message(gui_button("Clear All (this console)")):
-        overlay_clear()
-    gui_row("row-height: content;")
-    on gui_message(gui_button("Clear All (my whole ship)")):
-        overlay_clear(to=my_ship)
-    await gui()
-
 # Custom overlay builder authored as a //overlay route (the sugar form): no Python,
 # no registration call. Content fields (title, sub) arrive as task vars.
 //overlay/custom_card
@@ -194,7 +93,9 @@ Properties:
     gui_row("row-height: content;")
     gui_text(f"$text:`{sub}`;justify:center;font:gui-3;color:#8f8")
 
-# Modal choice: await the result from a background task, then react.
+# Modal choice: await the result from a background task, then react. Scheduled by
+# the "modal choice" specimen -- a GUI task is already in await gui() and cannot
+# await anything else, so the awaiting has to happen somewhere that can.
 === demo_choice
     result = await overlay_choice("Fire on the ambassador?", ["Yes", "No"], to=choice_client)
     overlay_clear("center_hero", to=choice_client)

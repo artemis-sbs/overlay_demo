@@ -11,11 +11,14 @@
 # ============================================================================
 
 @console/gallery_viewer !0 ^2 "Gallery Viewer"
-    " Full-page gallery examples, drawn at the size they are meant to be.
+    " Full-page examples, and the second surface the Overlays category fires at.
     jump gallery_viewer_screen
 
 
 === gallery_viewer_screen
+    # The gallery addresses this screen by ROLE, so it never needs to know which
+    # client id the engine handed out.
+    add_role(client_id, "gallery_viewer")
     gallery_page_key = gallery_current_page()
     gallery_page_data = gallery_entry(gallery_page_key)
 
@@ -145,3 +148,57 @@
         jump gallery_viewer_screen
 
     await gui()
+
+
+# ============================================================================
+# MORPH: this screen becomes any console, on request from the gallery.
+#
+# The pattern is LM's director addon (director/__init__.mast, cv_show): reroute a
+# client to a label that assigns a ship and calls gui_console(). Copying that
+# alone is NOT enough -- see the role note below.
+#
+# Why it matters here: the Overlays category needs a SECOND surface to fire at,
+# and one that can be a real mainscreen so `consoles="mainscreen"` can be tested
+# rather than approximated. One morphable console replaces the whole crew set.
+# ============================================================================
+=== gallery_viewer_morph
+    default morph_console = "mainscreen"
+
+    # A morph changes what this screen IS, so the previous screen's overlays go
+    # with it. Cleared HERE, before the page changes, while the slot's sub-region
+    # still belongs to the page that established it -- a region outliving its
+    # page is the overlay layer's known failure mode, so never ask it to.
+    overlay_clear(to=client_id)
+
+    # An engine console has nothing to draw without a ship.
+    morph_players = to_object_list(role("__player__"))
+    if sbs.get_ship_of_client(client_id) is None and len(morph_players) > 0:
+        sbs.assign_client_to_ship(client_id, morph_players[0].id)
+
+    gui_console(morph_console)
+    set_inventory_value(client_id, "CONSOLE_TYPE", morph_console)
+
+    # THE ROLE MATTERS AS MUCH AS CONSOLE_TYPE. Audience narrowing -- overlays,
+    # announce(), comms targeting -- goes through any_role(), so a screen with
+    # CONSOLE_TYPE and no role is invisible to all of them and the message is
+    # dropped in SILENCE. LM's show_main_game_screen sets both and says so;
+    # cv_show sets neither. Stale roles are removed first, or a screen that used
+    # to be a mainscreen keeps answering as one.
+    for morph_name in gui_get_console_types():
+        remove_role(client_id, morph_name)
+    add_role(client_id, f"console, {morph_console}")
+    # ...and stay addressable as the viewer, so the gallery can morph it back.
+    add_role(client_id, "gallery_viewer")
+    await gui()
+
+
+# Back to the gallery's own pages. Clearing the engine widget list first: a
+# console left one behind, and the page underneath would draw through it.
+=== gallery_viewer_restore
+    overlay_clear(to=client_id)
+    gui_widget_list_clear()
+    set_inventory_value(client_id, "CONSOLE_TYPE", "gallery_viewer")
+    for morph_name in gui_get_console_types():
+        remove_role(client_id, morph_name)
+    add_role(client_id, "gallery_viewer")
+    jump gallery_viewer_screen
