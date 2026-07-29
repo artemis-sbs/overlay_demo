@@ -30,6 +30,25 @@
     gui_section("area: 1, 1, 99, 5;")
     gui_row("row-height: 1fr; font:gui-3;")
     gui_text("$text:`CONTROL GALLERY`;font:gui-3;color:#8cf;", "col-width: content;")
+    # The tour walks the index in authoring order and narrates each stop through
+    # the overlay lower third -- the gallery introducing itself with the feature
+    # this mission was originally built to demo.
+    if not gallery_tour_running():
+        on gui_message(gui_button("Take the tour")):
+            gallery_step = gallery_tour_start()
+            jump gallery_tour_moved
+    if gallery_tour_running():
+        gui_text(f"$text:`tour {gallery_tour_position()}`;font:gui-1;color:#cc0;", "col-width: content;")
+        on gui_message(gui_button("Back")):
+            gallery_step = gallery_tour_step(-1)
+            jump gallery_tour_moved
+        on gui_message(gui_button("Next")):
+            gallery_step = gallery_tour_step(1)
+            jump gallery_tour_moved
+        on gui_message(gui_button("End tour")):
+            gallery_tour_stop()
+            overlay_clear("lower_third", to=client_id)
+            jump gallery_screen
     # On the server screen this is the way back to LM's main screen and its
     # pause/resume controls. Harmless on a console.
     on gui_message(gui_button("Main screen")):
@@ -533,7 +552,13 @@
         gui_row("row-height: 1fr;")
         gui_list_box(gallery_code_items(f"{gallery_spec}_fixed"), "", item_template=gallery_code_row, read_only=True)
     else:
-        gallery_frame(f"SOURCE   {gallery_spec}", "26, 44, 99, 99", "#fc8")
+        # Notes are authored in gallery.amd. A record with none gives the source
+        # panel the full width rather than parking it beside an empty box.
+        gallery_has_notes = gallery_notes_panel(gallery_entry_data, "63, 44, 99, 99")
+        if gallery_has_notes:
+            gallery_frame(f"SOURCE   {gallery_spec}", "26, 44, 62, 99", "#fc8")
+        if not gallery_has_notes:
+            gallery_frame(f"SOURCE   {gallery_spec}", "26, 44, 99, 99", "#fc8")
         gui_row("row-height: content;")
         on gui_message(gui_button("Copy to clipboard")):
             gallery_copy(gallery_spec)
@@ -548,6 +573,23 @@
             jump gallery_screen
 
     await gui()
+
+
+# One stop on the tour: narrate through the overlay lower third, then repaint the
+# browser onto the entry. Shared by Take the tour / Back / Next, because all three
+# do the same thing once the index has moved.
+=== gallery_tour_moved
+    # gallery_tour_step returns None when the tour walks off either end -- and it
+    # has already ended itself. A tour that silently wraps forever never tells
+    # you that you have seen everything.
+    if gallery_step is None:
+        overlay_clear("lower_third", to=client_id)
+        overlay_toast("End of the tour.", to=client_id, seconds=4)
+        jump gallery_screen
+    gallery_spec = gallery_step
+    gallery_narr_title, gallery_narr_body = gallery_tour_narration(gallery_spec)
+    overlay_lower_third(gallery_narr_title, gallery_narr_body, to=client_id, seconds=12)
+    jump gallery_screen
 
 
 # The other task in the watch/repaint recipe: the work the panel cannot see.

@@ -1,0 +1,429 @@
+// The Control Gallery's index and prose.
+//
+// One record per specimen. The (key) MUST match a `# >>gallery: <key>` marker in
+// gallery.mast, gallery_pages.mast or gallery_specimens.py -- that key is the
+// join between the prose here and the code there, and a record naming a marker
+// that does not exist shows up as "no marked span" in the source panel.
+//
+// FILE ORDER IS NAV ORDER, and consecutive records sharing a Category collapse
+// under one header in the index. So the shape of this file is the shape of the
+// menu.
+//
+// First line of the body is the BLURB (the header line). Everything after it is
+// NOTES, rendered by gui_text_area -- so `-` bullets and `#` headings work.
+//
+// Kind: trap  -> runs BROKEN next to FIXED, and needs <key>_broken/<key>_fixed spans
+// Kind: page  -> drawn full-bleed on the Gallery Viewer console
+
+# [Gallery](gallery)
+
+## [gui_text](text_basic)
+---
+Category: Controls
+---
+One styled line. $text: comes first; justify:left is the default.
+
+A single styled line of text. For anything multi-line or formatted, reach for
+gui_text_area instead -- it parses a mini-markdown and scrolls itself.
+- `$text:` must come FIRST in the style string.
+- `justify:left` is the default. Never write it.
+- Give text rows about 2.2em or more; cramped vertical text is the most common
+  first review note on a new panel.
+
+## [gui_text (live)](text_live)
+---
+Category: Controls
+---
+Keep the handle and update it. .update() replaces the WHOLE style string.
+
+A plain gui_text is built once and then goes stale. For a value that moves, keep
+the widget it returns and update that.
+- `.update()` REPLACES the entire style string. Pass only `text:` and the font,
+  color and justification go with it.
+- This is the light alternative to a full repaint. See the watch/repaint recipe
+  for when the state changes in another task entirely.
+
+## [gui_button](button_basic)
+---
+Category: Controls
+---
+on gui_message fires when the value changes.
+
+- Use `on_press=` / `data=` rather than an `on gui_message` block when the button
+  is built inside a `for` loop. See the "handler in a for loop" trap.
+- `data={}` entries are injected as task VARIABLES in the handler, and the widget
+  that fired is `__ITEM__`.
+
+## [gui_checkbox](checkbox_basic)
+---
+Category: Controls
+---
+State lives in your variable; the widget reflects it.
+
+The checkbox does not own its state -- your variable does, and the widget is
+built from it. `var=` binds the two so a toggle writes back for you.
+
+## [gui_drop_down](drop_down_basic)
+---
+Category: Controls
+---
+list: is comma separated. var= binds the choice to a variable.
+
+Prefer a dropdown over a row of buttons once there are more than about four
+choices; it costs one row instead of four.
+
+## [gui_int_slider](slider_basic)
+---
+Category: Controls
+---
+low/high in the props; read .value in the handler.
+
+A slider declines to be measured (its size includes engine-drawn chrome), so a
+`col-width: content` column holding one falls back to flex rather than to zero.
+
+## [gui_list_box](list_box_basic)
+---
+Category: Controls
+---
+Every repeating list. item_template renders a row, title_template labels it.
+
+The settled pattern for anything that repeats: a listbox plus a detail panel
+acting on the selection.
+- Label it with `title_template`, NOT a text row above it, so the list gets the
+  whole section.
+- In the item template, size the ROWS and return None. Returning a size leaves
+  the item section degenerate, which kills selection and the click region.
+- See the item_template shelf under Recipes for four row layouts to start from.
+
+## [gui_table](table_basic)
+---
+Category: Controls
+---
+A listbox with columns. The declarative form generates the row for you.
+
+Two forms: pass column specs and it builds the row, or use it as a context
+manager and author the row yourself.
+- `auto` columns are sized to the widest cell, header included, and share
+  whatever percent the fixed columns leave.
+- Cells can be interactive (checkbox, dropdown, input, button); the row is
+  updated before `on_cell_change` is called.
+
+## [gui_property_list_box](property_list_box_basic)
+---
+Category: Controls
+---
+Name/value rows from a dict, each value an expression evaluated later.
+
+The values are expression STRINGS, evaluated by the list box rather than where
+you wrote them -- so they cannot see the locals of the task that built the
+panel. Referencing one is a "name is not defined" at present time. Keep them
+self-contained.
+
+## [gui_text_area](text_area_basic)
+---
+Category: Controls
+---
+Multi-line rich text with mini-markdown, and it scrolls itself.
+
+Not simply a bigger gui_text. It parses a markdown-like language and adds a
+vertical scrollbar when the content overflows.
+- `#`/`##`/`###` headings, `-` bullets, `1.` ordered lists, blank line resets.
+- `^` is the newline.
+- Inline objects: `![](image://key)`, `[](ship://hull)`, `[](face://...)`.
+- It CANNOT render source code: `#` is also a MAST comment, `-` a bullet, and
+  `$` a style directive. Render code as one gui_text per line.
+
+## [gui_icon](icon_basic)
+---
+Category: Controls
+---
+By sheet index, or by NAME so a mission can re-skin it.
+
+Prefer the name form. A name follows its alias to a look, and a mission that
+registers its own art re-skins every screen that draws that name.
+- An unknown name draws NOTHING and says so once. A wrong icon is worse than a
+  missing one, because it looks deliberate.
+
+## [gui_icon_button](icon_button_basic)
+---
+Category: Controls
+---
+A clickable icon. Fires gui_click, not gui_message.
+
+`on gui_click` is for icons and anything carrying a `click_tag`; `on gui_message`
+is for widgets whose VALUE changes.
+
+## [gui_radio / gui_vradio](radio_basic)
+---
+Category: Controls
+---
+One of N, horizontal or vertical. var= binds the choice.
+
+Labels are one comma-separated string. Use it when all the choices are worth
+showing at once; otherwise a dropdown costs less room.
+
+## [gui_input](input_basic)
+---
+Category: Controls
+---
+Typed text. var= pre-fills it and takes the value back.
+
+The browser mock reports a typein twice: `change` per keystroke with the
+cumulative string, and `submit` on Enter.
+
+## [gui_slider](slider_float)
+---
+Category: Controls
+---
+The float slider. min/max/label live in the props.
+
+`gui_int_slider` is the same widget restricted to whole numbers -- which is what
+you usually want for a count.
+
+## [gui_grid](grid_basic)
+---
+Category: Controls
+---
+A context manager that wraps every N items to a new row.
+
+Items flow left to right and wrap automatically, so a fixed-column layout needs
+no manual `gui_row()` per line. The short final row is padded so the columns stay
+aligned. It only starts standard rows -- no new rendering path.
+
+## [gui_face](face_basic)
+---
+Category: Controls
+---
+A generated crew portrait from a face string.
+
+The `faces` module builds them per race (`random_terran`, `random_skaraan`, ...).
+Store the string if you want the same face twice; generating one per repaint
+gives you a different person every frame.
+
+## [gui_ship](ship_basic)
+---
+Category: Controls
+---
+A hull rendered from its ship_data key.
+
+Like the slider, a Ship declines to be measured -- its size includes engine-drawn
+chrome -- so it falls back to flex in a content-sized column rather than to zero.
+
+## [gui_blank / gui_hole](blank_hole)
+---
+Category: Controls
+---
+Spacers. blank fills a cell; hole reserves columns so the next item spans them.
+
+`gui_blank()` is one empty cell. `gui_hole(n)` reserves n column slots, so the
+item after it spans them -- the way to make one cell wider than its neighbors
+without computing percentages.
+
+## [row-height modes](layout_row_modes)
+---
+Category: Layout
+---
+1fr shares the leftover, content hugs the text, a fixed em/px is taken off the top.
+
+`1fr` is the DEFAULT: a row that declares nothing still shares the leftover space
+but is never squeezed below its min-content.
+- `content` = the tallest cell at its final width, wrapping included.
+- A content row CANNOT invent space. Fill a section with fixed rows and the
+  content rows are correctly squeezed to nothing -- that is the layout, not a bug.
+- `em` is one line of the ROW's font, and an unfonted row is gui-2 (24px).
+
+## [col-width modes](layout_col_modes)
+---
+Category: Layout
+---
+content is natural width, min-content the widest unbreakable word.
+
+- `content` = natural width, clamped to what is available.
+- `min-content` = the widest unbreakable word.
+- `max-content` = the whole line, unwrapped.
+- A plain number is a PERCENT of the enclosing section, not of the screen.
+
+When a row cannot hold everything, flex columns shrink to zero first, then
+content columns shrink toward min-content, then it clamps.
+
+## [size arithmetic](layout_arithmetic)
+---
+Category: Layout
+---
+1em+10px and 62-25px both work.
+
+Before v1.4.0 a `+`/`-` term was silently dropped, which is worth knowing if you
+are reading older code that looks like it should work.
+
+Padding is `left, top, right, bottom`, and top/bottom come OUT of the row height.
+A single value (`padding:13px`) is horizontal only and costs no height.
+
+## [overflow](layout_overflow)
+---
+Category: Layout
+---
+spill (default), shrink, ellipsis, hide -- for text that cannot fit at any size.
+
+Applied at present time against the final rect. The engine does NOT clip, so
+`spill` draws straight over whatever sits next to it.
+
+This is not a substitute for sizing the row properly -- reach for it only when
+the text genuinely cannot fit at any size.
+
+## [watch / repaint](recipe_watch_repaint)
+---
+Category: Recipes
+---
+A panel cannot see state change in another task, so watch it and repaint.
+
+`on change <expr>` takes any expression, not just a variable -- a function call,
+a data_set read, a computed value.
+
+The heavier form is a `gui_sub_task_schedule` watcher that polls and calls
+`gui_task_jump("repaint")`. Same shape, more machinery; use it when the check is
+expensive or needs its own delay loop.
+
+## [status line](recipe_status_line)
+---
+Category: Recipes
+---
+Feedback must land on a surface that is actually shown.
+
+A console with no info panel silently drops `comms_info_card` and info-panel
+messages, and the player sees nothing at all. A panel that confirms its own
+actions should own a visible status line.
+
+Route chatter and notifications to the info panel; keep the text waterfall for
+mechanical status.
+
+## [item_template shelf](recipe_item_templates)
+---
+Category: Recipes
+---
+Four row templates to start from. Swapping the template is the only difference.
+
+The listbox, the data and the selection are untouched between these four -- only
+`item_template` changes.
+- plain: a name and a value.
+- banded: a background per row, decided per item.
+- icon+label+value: `col-width: content` on the first two so values line up.
+- detail: a heading plus a wrapping `content` row under it.
+
+Every one sizes the ROW and returns None.
+
+## [reusable style](recipe_style_def)
+---
+Category: Recipes
+---
+gui_style_def once, then hand it to every row.
+
+One place to change the look, and the rows stop repeating a style string that
+will eventually disagree with itself.
+
+## [update() drops the style](trap_update_style)
+---
+Category: Traps
+Kind: trap
+---
+update() REPLACES the whole style string.
+
+Pass only `text:` and the font, color and justification go with it -- the widget
+reverts to unstyled, left-aligned. Carry the whole string every time.
+
+## [handler in a for loop](trap_loop_handler)
+---
+Category: Traps
+Kind: trap
+---
+An inline on-block in a loop captures the loop var at its LAST value.
+
+`on gui_message(...)` registered inside a `for` loop is flaky, and an inline
+block closes over the loop variable at its final value -- so every button
+reports the last one.
+
+Proven fixes: `on_press=`/`data=` on the button, or read `__ITEM__` in the block
+instead of the loop variable. For comms `+` buttons in a loop, use a handler
+label and a data dict, never an inline block.
+
+## [1em under a bigger font](trap_row_em_font)
+---
+Category: Traps
+Kind: trap
+---
+em is one line of the ROW's font, and an unfonted row is gui-2.
+
+One line by font: smallest 18, gui-1 22, gui-2 24, gui-3 28, gui-4 32, gui-5 36,
+gui-6 52. Declare the font on the row, or size the row to `content`.
+
+## [padding eats row height](trap_padding_height)
+---
+Category: Traps
+Kind: trap
+---
+Top and bottom padding come OUT of the row height.
+
+A row needing one gui-3 line plus 10px of top padding is `1em+10px`, not `1em`.
+A single-value padding is horizontal only and costs no height.
+
+## [content row starved](trap_content_starved)
+---
+Category: Traps
+Kind: trap
+---
+A content row cannot invent space.
+
+Fill a section with fixed rows and the content rows are correctly squeezed to
+nothing. If a content row renders zero-height, the section is oversubscribed --
+that is the layout working, not a bug. Give the panel room.
+
+## [engine widget + overlay strip](page_engine_widget)
+---
+Category: Full page
+Kind: page
+---
+gui_layout_widget embeds a real engine view; your rows draw over it.
+
+`2dview`, `comms_2d_view`, `science_2d_view`, `weapon_2d_view`, `ship_data`,
+`red_alert`, `text_waterfall` and more. `gui_console("helm")` sets a whole
+standard console's widget list at once.
+
+Detached command consoles (a game master, an admiral overseer) are built this
+way -- a camera object plus embedded 2D views.
+
+## [gui_region, updated in place](page_region)
+---
+Category: Full page
+Kind: page
+---
+An absolutely-positioned region redraws by itself.
+
+The page underneath is not repainted, which is what makes a live HUD cheap.
+- Rebuild the WHOLE region and fill it again. Updating one child in place inside
+  an absolute region ghosts in the ENGINE (the mock cannot reproduce it).
+- Leaving the `with` block re-presents the region for you. Do NOT call
+  `represent()`: it takes an event, and `EVENT` is a ROUTE variable that does not
+  exist inside a GUI task's on-change.
+
+## [listbox + detail console](page_master_detail)
+---
+Category: Full page
+Kind: page
+---
+The settled console shape: a titled listbox acting on a detail panel.
+
+Map, research, fleets, requisition, the hangar board and the quest log are all
+this shape. Title the list with `title_template`, and give the detail panel the
+room its content needs rather than a strip.
+
+## [layout playground](page_layout_playground)
+---
+Category: Full page
+Kind: page
+---
+Set row-height, col-width and font from dropdowns and watch the boxes move.
+
+The style strings the dropdowns assemble are echoed above the boxes, because
+reading the string next to the result is most of the lesson.
+
+A fixed row sits above the row under test and a `1fr` row below it, so a starved
+content row reads as exactly that rather than as a mystery.

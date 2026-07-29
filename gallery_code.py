@@ -210,6 +210,29 @@ def gallery_caption(text, color="#9ab"):
     gui_text(f"$text:{gallery_label(text)};font:gui-1;color:{color};")
 
 
+def gallery_prose(text):
+    """Authored prose for gui_text_area. Braces must be doubled (a text area
+    f-string-formats its props too), but NOTHING else is escaped: the markdown --
+    `#` headings, `-` bullets -- is the point of using a text area for notes."""
+    return (text or "").replace("{", "{{").replace("}", "}}")
+
+
+def gallery_notes_panel(entry, area):
+    """The NOTES panel: everything in the AMD record after the blurb line.
+
+    Silent when a record has no notes, so the source panel can take the full
+    width instead of sitting next to an empty box.
+    """
+    from sbs_utils.procedural.gui import gui_text_area
+    notes = entry.get("notes") or ""
+    if not notes.strip():
+        return False
+    gallery_frame("NOTES", area, "#9ab")
+    gui_row("row-height: 1fr;")
+    gui_text_area(gallery_prose(notes))
+    return True
+
+
 def gallery_source_panel(key, area, title, color):
     """A read-only source panel with no Copy button -- the BROKEN half of a trap.
     Only the fix is worth copying."""
@@ -222,110 +245,49 @@ def gallery_source_panel(key, area, title, color):
 # ---------------------------------------------------------------------------
 # The index
 #
-# Phase 1 keeps this in Python. Phase 2 moves the prose (blurb / when to use /
-# do / don't) into gallery.amd and leaves only the key -> label join here.
+# Entries are AUTHORED, not coded: gallery.amd holds one record per specimen and
+# this reads it. The (key) is the join -- the same string as the `# >>gallery:`
+# marker in the .mast/.py -- so adding an entry is one AMD record plus one marked
+# span, and a record naming a marker that does not exist shows up in the source
+# panel as "no marked span" rather than silently.
+#
+# FILE ORDER IS NAV ORDER; consecutive records sharing a Category collapse under
+# one header.
+#
+# body: first line is the BLURB (header line), the rest is NOTES (gui_text_area,
+# so its markdown works).
 # ---------------------------------------------------------------------------
 
-GALLERY_ENTRIES = [
-    {"category": "Controls", "key": "text_basic", "label": "gui_text",
-     "blurb": "One styled line. $text: comes first; justify:left is the default."},
-    {"category": "Controls", "key": "text_live", "label": "gui_text (live)",
-     "blurb": "Keep the handle and .update() the WHOLE style string on change."},
-    {"category": "Controls", "key": "button_basic", "label": "gui_button",
-     "blurb": "on gui_message fires when the value changes."},
-    {"category": "Controls", "key": "checkbox_basic", "label": "gui_checkbox",
-     "blurb": "State lives in your variable; the widget reflects it."},
-    {"category": "Controls", "key": "drop_down_basic", "label": "gui_drop_down",
-     "blurb": "list: is comma separated. var= binds the choice to a variable."},
-    {"category": "Controls", "key": "slider_basic", "label": "gui_int_slider",
-     "blurb": "low/high in the props; read .value in the handler."},
-    {"category": "Controls", "key": "list_box_basic", "label": "gui_list_box",
-     "blurb": "Every repeating list. item_template renders a row, title_template labels it."},
-    {"category": "Controls", "key": "table_basic", "label": "gui_table",
-     "blurb": "A listbox with columns. Declarative form generates the row; auto columns size to the widest cell."},
-    {"category": "Controls", "key": "property_list_box_basic", "label": "gui_property_list_box",
-     "blurb": "Name/value rows from a dict, each value an expression evaluated at build time."},
-    {"category": "Controls", "key": "text_area_basic", "label": "gui_text_area",
-     "blurb": "Multi-line rich text with mini-markdown, and it scrolls itself. Not a bigger gui_text."},
-    {"category": "Controls", "key": "icon_basic", "label": "gui_icon",
-     "blurb": "By sheet index, or by NAME so a mission can re-skin it. An unknown name draws nothing."},
-    {"category": "Controls", "key": "icon_button_basic", "label": "gui_icon_button",
-     "blurb": "A clickable icon. Fires gui_click, not gui_message."},
-    {"category": "Controls", "key": "radio_basic", "label": "gui_radio / gui_vradio",
-     "blurb": "One of N, horizontal or vertical. var= binds the choice."},
-    {"category": "Controls", "key": "input_basic", "label": "gui_input",
-     "blurb": "Typed text. var= pre-fills it and takes the value back."},
-    {"category": "Controls", "key": "slider_float", "label": "gui_slider",
-     "blurb": "The float slider. min/max/label live in the props; gui_int_slider is the integer form."},
-    {"category": "Controls", "key": "grid_basic", "label": "gui_grid",
-     "blurb": "A context manager that wraps every N items to a new row -- no manual gui_row."},
-    {"category": "Controls", "key": "face_basic", "label": "gui_face",
-     "blurb": "A generated crew portrait from a face string."},
-    {"category": "Controls", "key": "ship_basic", "label": "gui_ship",
-     "blurb": "A hull rendered from its ship_data key."},
-    {"category": "Controls", "key": "blank_hole", "label": "gui_blank / gui_hole",
-     "blurb": "Spacers. blank fills a cell; hole reserves columns so the next item spans them."},
+GALLERY_ENTRIES = []
 
-    # Layout. Every box is given a visible background, because the whole subject
-    # is where the edges land -- an unfilled demo of sizing shows nothing.
-    {"category": "Layout", "key": "layout_row_modes", "label": "row-height modes",
-     "blurb": "1fr shares the leftover, content hugs the text, a fixed em/px is taken off the top."},
-    {"category": "Layout", "key": "layout_col_modes", "label": "col-width modes",
-     "blurb": "content is natural width, min-content the widest unbreakable word, max-content the unwrapped line."},
-    {"category": "Layout", "key": "layout_arithmetic", "label": "size arithmetic",
-     "blurb": "1em+10px and 62-25px both work. Before v1.4.0 the +/- term was silently dropped."},
-    {"category": "Layout", "key": "layout_overflow", "label": "overflow",
-     "blurb": "spill (default), shrink, ellipsis, hide -- for text that cannot fit at any size."},
 
-    # Recipes are composed patterns rather than single widgets -- the shapes a
-    # real console is actually made of. A new author copies one of these, not a
-    # gui_text call.
-    {"category": "Recipes", "key": "recipe_watch_repaint", "label": "watch / repaint",
-     "blurb": "A sub-task polls state and calls gui_task_jump when it changes. The standard live panel."},
-    {"category": "Recipes", "key": "recipe_status_line", "label": "status line",
-     "blurb": "Confirmations must land on a surface that is actually shown. A console with no info panel drops them."},
-    {"category": "Recipes", "key": "recipe_item_templates", "label": "item_template shelf",
-     "blurb": "Four row templates to start from -- banded, two-column, icon+label+value, and a wrapping detail row."},
-    {"category": "Recipes", "key": "recipe_style_def", "label": "reusable style",
-     "blurb": "gui_style_def once, then hand it to every row -- one place to change the look."},
+def gallery_load_entries():
+    """Read gallery.amd once into GALLERY_ENTRIES. Safe to call repeatedly."""
+    if GALLERY_ENTRIES:
+        return
+    from sbs_utils.procedural.quest import document_get_amd_file
+    from sbs_utils.procedural.amd_doc import amd_root_node, amd_records
+    doc = document_get_amd_file(get_mission_dir_filename("gallery.amd"))
+    # amd_root_node, NOT amd_section: with a single `# [Gallery](gallery)` title
+    # heading the root node IS the section, and amd_section would look for a
+    # child of it also keyed "gallery" and find nothing.
+    for rec in amd_records(amd_root_node(doc)):
+        body = rec.get("body") or ""
+        parts = body.split(chr(10), 1)
+        data = rec.get("data") or {}
+        GALLERY_ENTRIES.append({
+            "key": rec.get("key"),
+            "label": rec.get("display") or rec.get("key"),
+            "category": data.get("category", "Controls"),
+            "kind": data.get("kind"),
+            "blurb": parts[0].strip(),
+            "notes": (parts[1].strip() if len(parts) > 1 else ""),
+        })
+    if not GALLERY_ENTRIES:
+        log("gallery: gallery.amd produced no entries", "gallery", "warning")
+    else:
+        log(f"gallery: {len(GALLERY_ENTRIES)} entries", "gallery")
 
-    # Some examples are a whole SCREEN, not a control -- an embedded engine view,
-    # an absolutely-positioned region, a master/detail console. Squeezed into the
-    # detail pane they would teach the wrong thing about proportion. These are
-    # listed here but drawn full-bleed on the Gallery Viewer console; picking one
-    # here is what the viewer then shows.
-    {"category": "Full page", "kind": "page", "key": "page_engine_widget",
-     "label": "engine widget + overlay strip",
-     "blurb": "gui_layout_widget embeds a real engine view; your rows draw over it."},
-    {"category": "Full page", "kind": "page", "key": "page_region",
-     "label": "gui_region, updated in place",
-     "blurb": "An absolutely-positioned region redraws by itself, without repainting the page under it."},
-    {"category": "Full page", "kind": "page", "key": "page_master_detail",
-     "label": "listbox + detail console",
-     "blurb": "The settled console shape: a titled listbox on the left acting on a detail panel."},
-    {"category": "Full page", "kind": "page", "key": "page_layout_playground",
-     "label": "layout playground",
-     "blurb": "Set row-height, col-width and font from dropdowns and watch the boxes move."},
-
-    # Traps run BROKEN and FIXED side by side. Each needs two marked spans,
-    # <key>_broken and <key>_fixed. Watching the broken one misbehave beats any
-    # amount of prose about it.
-    {"category": "Traps", "kind": "trap", "key": "trap_update_style",
-     "label": "update() drops the style",
-     "blurb": "update() REPLACES the whole style string -- pass only text and font, color and justify go with it."},
-    {"category": "Traps", "kind": "trap", "key": "trap_loop_handler",
-     "label": "handler in a for loop",
-     "blurb": "An inline on-block in a loop captures the loop var at its LAST value. Use data={} and read it back."},
-    {"category": "Traps", "kind": "trap", "key": "trap_row_em_font",
-     "label": "1em under a bigger font",
-     "blurb": "em is one line of the ROW's font, and an unfonted row is gui-2. Declare the font on the row."},
-    {"category": "Traps", "kind": "trap", "key": "trap_padding_height",
-     "label": "padding eats row height",
-     "blurb": "Top and bottom padding come OUT of the row height. Add it back: 1em+10px."},
-    {"category": "Traps", "kind": "trap", "key": "trap_content_starved",
-     "label": "content row starved",
-     "blurb": "A content row cannot invent space. Fill a section with fixed rows and it is correctly squeezed to nothing."},
-]
 
 GALLERY_PAGE_DEFAULT = "page_engine_widget"
 
@@ -354,9 +316,77 @@ def gallery_current_page():
     return GALLERY_PAGE_PICK[0]
 
 
+# ---------------------------------------------------------------------------
+# The tour
+#
+# Walks the index in authoring order, narrating each stop through the overlay
+# system's lower third -- the gallery introducing itself with the feature this
+# mission was originally built to demo.
+#
+# State is story-wide for the same reason the page pick is: the tour is driven
+# from whichever screen you are on, and the browser is usually the server.
+# ---------------------------------------------------------------------------
+
+GALLERY_TOUR = {"on": False, "at": 0}
+
+
+def gallery_tour_running():
+    return GALLERY_TOUR["on"]
+
+
+def gallery_tour_start():
+    gallery_load_entries()
+    GALLERY_TOUR["on"] = True
+    GALLERY_TOUR["at"] = 0
+    return gallery_tour_key()
+
+
+def gallery_tour_stop():
+    GALLERY_TOUR["on"] = False
+
+
+def gallery_tour_key():
+    gallery_load_entries()
+    if not GALLERY_ENTRIES:
+        return None
+    at = max(0, min(GALLERY_TOUR["at"], len(GALLERY_ENTRIES) - 1))
+    return GALLERY_ENTRIES[at]["key"]
+
+
+def gallery_tour_step(delta):
+    """Move the tour and return the new key, or None when it walks off the end
+    (which also ends the tour -- a tour that silently wraps forever never tells
+    you that you have seen everything)."""
+    gallery_load_entries()
+    at = GALLERY_TOUR["at"] + delta
+    if at < 0 or at >= len(GALLERY_ENTRIES):
+        GALLERY_TOUR["on"] = False
+        return None
+    GALLERY_TOUR["at"] = at
+    return GALLERY_ENTRIES[at]["key"]
+
+
+def gallery_tour_position():
+    gallery_load_entries()
+    return f"{GALLERY_TOUR['at'] + 1} of {len(GALLERY_ENTRIES)}"
+
+
+def gallery_tour_narration(key):
+    """Title and body for the tour's lower third: the category and label, and
+    the blurb. Clamped to one readable line, because a lower third is an
+    attention layer -- the notes panel is the durable copy."""
+    e = gallery_entry(key)
+    title = f"{e.get('category', '')} -- {e.get('label', '')}".strip(" -")
+    body = (e.get("blurb") or "").strip()
+    if len(body) > 140:
+        body = body[:137].rstrip() + "..."
+    return title, body
+
+
 def gallery_next_page(key):
     """The next full-page entry after `key`, wrapping -- so the viewer can be
     driven on its own, without the browser open on another screen."""
+    gallery_load_entries()
     pages = [e["key"] for e in GALLERY_ENTRIES if e.get("kind") == "page"]
     if not pages:
         return key
@@ -366,9 +396,16 @@ def gallery_next_page(key):
 
 
 def gallery_entry(key):
+    gallery_load_entries()
     for e in GALLERY_ENTRIES:
         if e["key"] == key:
             return e
+    # An unknown key (a stale pick, a typo) falls back to the first entry rather
+    # than raising -- but an EMPTY index means gallery.amd failed to load, and a
+    # blank screen with no explanation is worse than a visible complaint.
+    if not GALLERY_ENTRIES:
+        return {"key": key, "label": "gallery.amd did not load", "category": "Controls",
+                "kind": None, "blurb": "No entries. Check gallery.amd parses.", "notes": ""}
     return GALLERY_ENTRIES[0]
 
 
@@ -386,6 +423,7 @@ def gallery_nav_items():
     Rebuilt per repaint, which is why the caller re-applies the selection with
     set_selected_index() -- the items are new objects each time.
     """
+    gallery_load_entries()
     items = []
     seen = None
     for e in GALLERY_ENTRIES:
