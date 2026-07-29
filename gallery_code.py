@@ -34,6 +34,7 @@ GALLERY_MARK_END = "# <<gallery"
 # concatenates them into one snippet. Add a file here when you add a category.
 GALLERY_SOURCE_FILES = [
     "gallery.mast",
+    "gallery_pages.mast",
     "gallery_specimens.py",
 ]
 
@@ -240,6 +241,45 @@ GALLERY_ENTRIES = [
      "blurb": "low/high in the props; read .value in the handler."},
     {"category": "Controls", "key": "list_box_basic", "label": "gui_list_box",
      "blurb": "Every repeating list. item_template renders a row, title_template labels it."},
+    {"category": "Controls", "key": "table_basic", "label": "gui_table",
+     "blurb": "A listbox with columns. Declarative form generates the row; auto columns size to the widest cell."},
+    {"category": "Controls", "key": "property_list_box_basic", "label": "gui_property_list_box",
+     "blurb": "Name/value rows from a dict, each value an expression evaluated at build time."},
+    {"category": "Controls", "key": "text_area_basic", "label": "gui_text_area",
+     "blurb": "Multi-line rich text with mini-markdown, and it scrolls itself. Not a bigger gui_text."},
+    {"category": "Controls", "key": "icon_basic", "label": "gui_icon",
+     "blurb": "By sheet index, or by NAME so a mission can re-skin it. An unknown name draws nothing."},
+    {"category": "Controls", "key": "icon_button_basic", "label": "gui_icon_button",
+     "blurb": "A clickable icon. Fires gui_click, not gui_message."},
+    {"category": "Controls", "key": "radio_basic", "label": "gui_radio / gui_vradio",
+     "blurb": "One of N, horizontal or vertical. var= binds the choice."},
+    {"category": "Controls", "key": "input_basic", "label": "gui_input",
+     "blurb": "Typed text. var= pre-fills it and takes the value back."},
+    {"category": "Controls", "key": "slider_float", "label": "gui_slider",
+     "blurb": "The float slider. min/max/label live in the props; gui_int_slider is the integer form."},
+    {"category": "Controls", "key": "grid_basic", "label": "gui_grid",
+     "blurb": "A context manager that wraps every N items to a new row -- no manual gui_row."},
+    {"category": "Controls", "key": "face_basic", "label": "gui_face",
+     "blurb": "A generated crew portrait from a face string."},
+    {"category": "Controls", "key": "ship_basic", "label": "gui_ship",
+     "blurb": "A hull rendered from its ship_data key."},
+    {"category": "Controls", "key": "blank_hole", "label": "gui_blank / gui_hole",
+     "blurb": "Spacers. blank fills a cell; hole reserves columns so the next item spans them."},
+
+    # Some examples are a whole SCREEN, not a control -- an embedded engine view,
+    # an absolutely-positioned region, a master/detail console. Squeezed into the
+    # detail pane they would teach the wrong thing about proportion. These are
+    # listed here but drawn full-bleed on the Gallery Viewer console; picking one
+    # here is what the viewer then shows.
+    {"category": "Full page", "kind": "page", "key": "page_engine_widget",
+     "label": "engine widget + overlay strip",
+     "blurb": "gui_layout_widget embeds a real engine view; your rows draw over it."},
+    {"category": "Full page", "kind": "page", "key": "page_region",
+     "label": "gui_region, updated in place",
+     "blurb": "An absolutely-positioned region redraws by itself, without repainting the page under it."},
+    {"category": "Full page", "kind": "page", "key": "page_master_detail",
+     "label": "listbox + detail console",
+     "blurb": "The settled console shape: a titled listbox on the left acting on a detail panel."},
 
     # Traps run BROKEN and FIXED side by side. Each needs two marked spans,
     # <key>_broken and <key>_fixed. Watching the broken one misbehave beats any
@@ -260,6 +300,43 @@ GALLERY_ENTRIES = [
      "label": "content row starved",
      "blurb": "A content row cannot invent space. Fill a section with fixed rows and it is correctly squeezed to nothing."},
 ]
+
+GALLERY_PAGE_DEFAULT = "page_engine_widget"
+
+
+def gallery_is_page(key):
+    return gallery_entry(key).get("kind") == "page"
+
+
+# The full-page pick is STORY-WIDE, not per client.
+#
+# It was per-client at first, so two people browsing would not fight over one
+# selection. That was wrong the moment the browser moved to the SERVER screen:
+# the browser then runs as client 0 and the Gallery Viewer is a console with its
+# own id, so the viewer never saw the pick and always drew the default. The
+# picker and the viewer are different clients BY CONSTRUCTION here.
+GALLERY_PAGE_PICK = [GALLERY_PAGE_DEFAULT]
+
+
+def gallery_remember_page(key):
+    """Record a full-page pick, for the Gallery Viewer console to draw."""
+    if gallery_is_page(key):
+        GALLERY_PAGE_PICK[0] = key
+
+
+def gallery_current_page():
+    return GALLERY_PAGE_PICK[0]
+
+
+def gallery_next_page(key):
+    """The next full-page entry after `key`, wrapping -- so the viewer can be
+    driven on its own, without the browser open on another screen."""
+    pages = [e["key"] for e in GALLERY_ENTRIES if e.get("kind") == "page"]
+    if not pages:
+        return key
+    if key not in pages:
+        return pages[0]
+    return pages[(pages.index(key) + 1) % len(pages)]
 
 
 def gallery_entry(key):

@@ -1,0 +1,103 @@
+# ============================================================================
+# CONTROL GALLERY -- full-page examples, and the viewer console that shows them.
+#
+# Some examples are a whole SCREEN, not a control: an embedded engine view, an
+# absolutely-positioned region, a master/detail console. Squeezed into the
+# gallery's detail pane they would teach the wrong thing about proportion, so
+# they are listed in the gallery but DRAWN here, full-bleed.
+#
+# Pick one in the gallery ("Full page" in the index); it is remembered per
+# client, and this console shows whatever you last picked.
+# ============================================================================
+
+@console/gallery_viewer !0 ^2 "Gallery Viewer"
+    " Full-page gallery examples, drawn at the size they are meant to be.
+    jump gallery_viewer_screen
+
+
+=== gallery_viewer_screen
+    gallery_page_key = gallery_current_page()
+    gallery_page_data = gallery_entry(gallery_page_key)
+
+    match gallery_page_key:
+        case "page_engine_widget":
+# >>gallery: page_engine_widget
+            # gui_layout_widget embeds a REAL engine widget in a story page.
+            # Your own sections then draw over it.
+            gui_layout_widget("3dview")
+            gui_section("area: 2, 88, 98, 98;")
+            gui_row("row-height: 1fr; font:gui-3;")
+            gui_text("$text:`FORWARD VIEW`;font:gui-3;color:#8cf;")
+            gui_text("$text:`shields up   hull 100`;font:gui-3;color:#8f8;justify:right;")
+# <<gallery
+
+        case "page_region":
+# >>gallery: page_region
+            # A region is pinned to an absolute area and redraws BY ITSELF --
+            # the page underneath is not repainted.
+            start_counter(client_id, "page_region_clock")
+            gui_section("area: 2, 2, 98, 40;")
+            gui_row("row-height: 1fr; font:gui-3;")
+            gui_text("$text:`This page is built once and never repainted.`;font:gui-3;color:#9ab;")
+
+            page_hud = gui_region("area: 2, 45, 98, 70;")
+            with page_hud:
+                gui_row("row-height: 1fr; font:gui-4;")
+                gui_text(f"$text:`Region tick {int(get_counter_elapsed_seconds(client_id, 'page_region_clock', 0))}`;font:gui-4;color:#8cf;justify:center;")
+
+            # Rebuild the WHOLE region and fill it again. Updating one child in
+            # place inside an absolute region ghosts in the engine.
+            #
+            # Leaving the `with` block re-presents the region by itself -- do NOT
+            # call represent() here. It takes an event, and EVENT is a ROUTE
+            # variable: inside a GUI task's on-change there is no such name, so
+            # it is a NameError every tick.
+            on change int(get_counter_elapsed_seconds(client_id, "page_region_clock", 0)):
+                page_hud.rebuild()
+                with page_hud:
+                    gui_row("row-height: 1fr; font:gui-4;")
+                    gui_text(f"$text:`Region tick {int(get_counter_elapsed_seconds(client_id, 'page_region_clock', 0))}`;font:gui-4;color:#8cf;justify:center;")
+# <<gallery
+
+        case "page_master_detail":
+# >>gallery: page_master_detail
+            # The settled console shape: a titled listbox acting on a detail
+            # panel. Title it with title_template, not a label row above it.
+            page_ships = ~~[{"name": "Artemis", "hull": 100, "note": "flagship, all systems nominal"}, {"name": "Hera", "hull": 62, "note": "hull damage aft, damcon en route"}, {"name": "Aegis", "hull": 88, "note": "escorting the convoy"}]~~
+            gui_section("area: 2, 2, 34, 98;")
+            gui_row("row-height: 1fr;")
+            page_lb = gui_list_box(page_ships, "", item_template=gallery_fleet_row, title_template=gallery_fleet_title, select=True)
+            page_lb.set_selected_index(0, False)
+
+            gui_section("area: 36, 2, 98, 98;")
+            page_sel = page_lb.get_value()
+            gui_row("row-height: 2.4em; font:gui-4;")
+            gui_text(f"$text:{gallery_label(page_sel['name'])};font:gui-4;color:#8cf;")
+            gui_row("row-height: 2em; font:gui-2;")
+            gui_text(f"$text:`Hull {page_sel['hull']}`;font:gui-2;color:#8f8;")
+            gui_row("row-height: 1fr; font:gui-2;")
+            gui_text(f"$text:{gallery_label(page_sel['note'])};font:gui-2;color:#9ab;")
+
+            on change page_lb.value:
+                jump gallery_viewer_screen
+# <<gallery
+
+# --- viewer chrome ----------------------------------------------------------
+# Deliberately last and deliberately small: the example above it should own the
+# screen, which is the whole point of it not being in the gallery's detail pane.
+    gui_section("area: 2, 0, 98, 4;")
+    gui_row("row-height: 1fr; font:gui-1;")
+    gui_text(f"$text:{gallery_label('VIEWER   ' + gallery_page_data['label'])};font:gui-1;color:#678;", "col-width: content;")
+    # The viewer must be usable ALONE. Picking in the gallery works, but in a
+    # real session the browser is on another screen you may not be sitting at.
+    on gui_message(gui_button("Next example")):
+        gallery_remember_page(gallery_next_page(gallery_page_key))
+        jump gallery_viewer_screen
+
+# The pick is made on ANOTHER screen (the gallery, usually the server), so this
+# page has to watch for it -- it is sitting in await gui() and nothing else would
+# tell it to repaint.
+    on change gallery_current_page():
+        jump gallery_viewer_screen
+
+    await gui()

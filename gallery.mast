@@ -15,17 +15,25 @@
 
 @console/gallery !0 ^0 "Control Gallery"
     " Every GUI control, live, next to the source that built it.
-    default gallery_spec = "text_basic"
     jump gallery_screen
 
 
+# Entered three ways: the console label above, a repaint jump, and the SERVER
+# screen (story.mast reroutes the server here once the map is up, so the gallery
+# is available without connecting a console or having a ship). Hence the
+# `default` lives here rather than only in the console body.
 === gallery_screen
+    default gallery_spec = "text_basic"
     gallery_entry_data = gallery_entry(gallery_spec)
 
 # --- header -----------------------------------------------------------------
     gui_section("area: 1, 1, 99, 5;")
     gui_row("row-height: 1fr; font:gui-3;")
-    gui_text("$text:`CONTROL GALLERY`;font:gui-3;color:#8cf;")
+    gui_text("$text:`CONTROL GALLERY`;font:gui-3;color:#8cf;", "col-width: content;")
+    # On the server screen this is the way back to LM's main screen and its
+    # pause/resume controls. Harmless on a console.
+    on gui_message(gui_button("Main screen")):
+        gui_reroute_server("show_main_game_screen")
     # gallery_label, not gui_text_escape: a blurb reading "use data={}" is an
     # empty format field once gui_text f-string-formats the props.
     gui_text(f"$text:{gallery_label(gallery_entry_data['blurb'])};font:gui-1;color:#9ab;justify:right;")
@@ -40,7 +48,15 @@
 # A trap runs BROKEN and FIXED side by side and opens its own two frames, so the
 # single-specimen frame is only for the rest.
     gallery_is_trap = gallery_entry_data.get("kind") == "trap"
-    if not gallery_is_trap:
+    gallery_showing_page = gallery_entry_data.get("kind") == "page"
+    if gallery_showing_page:
+        # Full-page examples are DRAWN on the Gallery Viewer console (gallery_pages.mast).
+        # Squeezed into this pane they would teach the wrong thing about proportion.
+        gallery_remember_page(gallery_spec)
+        gallery_frame(f"FULL PAGE   {gallery_entry_data['label']}", "26, 6, 99, 42")
+        gallery_caption("Open the GALLERY VIEWER console to see this one at full size.", "#cc0")
+        gallery_caption("It shows whichever full-page example you last picked here.")
+    if not gallery_is_trap and not gallery_showing_page:
         gallery_frame(f"SPECIMEN   {gallery_entry_data['label']}", "26, 6, 99, 42")
 
     match gallery_spec:
@@ -122,6 +138,136 @@
             gallery_lb = gui_list_box(gallery_contacts, "", item_template=gallery_ship_row, title_template=gallery_ship_title, select=True)
             on change gallery_lb.value:
                 log(f"selected {gallery_lb.get_value()['name']}", "gallery")
+# <<gallery
+
+        case "table_basic":
+# >>gallery: table_basic
+            gallery_fleet = ~~[{"name": "Artemis", "hull": 100, "side": "tsn"}, {"name": "Hera", "hull": 62, "side": "tsn"}, {"name": "Raider Alpha", "hull": 88, "side": "raider"}]~~
+            gallery_cols = ~~[{"key": "name", "label": "Ship"}, {"key": "hull", "label": "Hull", "align": "c", "width": 20}, {"key": "side", "label": "Side", "align": "r", "width": 25}]~~
+            gui_row("row-height: 1fr;")
+            gui_table(gallery_fleet, gallery_cols, select=True)
+# <<gallery
+
+        case "property_list_box_basic":
+# >>gallery: property_list_box_basic
+            gui_row("row-height: 1fr;")
+            gui_property_list_box("Navigation")
+            # Each value is an EXPRESSION STRING evaluated later, by the list box
+            # -- not here. So it cannot see this task's locals: referencing one
+            # is a "name is not defined" at present time. Keep them self-contained.
+            #
+            # ~~ ~~ is a STATEMENT form, not a sub-expression: inline in a call
+            # argument it is a syntax error. Bind the dict first.
+            gallery_nav_props = ~~{"Heading": "gui_text('270 mark 5')", "Speed": "gui_text('half impulse')", "Shields": "gui_text('up')"}~~
+            gui_properties_set(gallery_nav_props)
+# <<gallery
+
+        case "text_area_basic":
+# >>gallery: text_area_basic
+            # Mini-markdown, and it scrolls itself when the content overflows.
+            # '^' is the newline -- the setter maps it to \n.
+            gui_row("row-height: 1fr;")
+            gui_text_area("## Status^All systems nominal.^- shields up^- 1 contact^^### Orders^1. Hold station^2. Await the escort")
+# <<gallery
+
+        case "icon_basic":
+# >>gallery: icon_basic
+            gui_row("row-height: 3em;")
+            gui_icon("icon_index: 137;color:#8cf;", "col-width: content;")
+            gui_text("$text:`by sheet index`;font:gui-2;")
+            gui_row("row-height: 3em;")
+            # By NAME, so a mission can re-skin every screen that draws it.
+            # An unknown name draws NOTHING and says so once.
+            gui_icon_name("quest.job", color="#cc0", style="col-width: content;")
+            gui_text("$text:`by name -- quest.job`;font:gui-2;")
+            gui_row("row-height: 3em;")
+            gui_icon_name("bell", color="#8f8", style="col-width: content;")
+            gui_text("$text:`by name -- bell`;font:gui-2;")
+# <<gallery
+
+        case "icon_button_basic":
+# >>gallery: icon_button_basic
+            default gallery_clicks = 0
+            gui_row("row-height: 2em; font:gui-2;")
+            gui_text(f"$text:`Clicked {gallery_clicks} times`;font:gui-2;color:#9ab;")
+            gui_row("row-height: 3em;")
+            gallery_ib = gui_icon_button("icon_index: 137;color:#8cf;", "col-width: content;")
+            # An icon fires gui_click, not gui_message.
+            on gui_click(gallery_ib):
+                gallery_clicks = gallery_clicks + 1
+                jump gallery_screen
+# <<gallery
+
+        case "radio_basic":
+# >>gallery: radio_basic
+            default gallery_weapon = "Beam"
+            default gallery_wing = "Alpha"
+            gui_row("row-height: 2.4em; font:gui-2;")
+            gallery_rb = gui_radio("Beam,Missile,Mine", var="gallery_weapon")
+            on gui_message(gallery_rb):
+                jump gallery_screen
+            gui_row("row-height: 1fr;")
+            gallery_vrb = gui_vradio("Alpha,Beta,Gamma", var="gallery_wing")
+            on gui_message(gallery_vrb):
+                jump gallery_screen
+            gui_row("row-height: 2em; font:gui-2;")
+            gui_text(f"$text:`{gallery_weapon} / {gallery_wing}`;font:gui-2;color:#9ab;")
+# <<gallery
+
+        case "input_basic":
+# >>gallery: input_basic
+            default gallery_callsign = "Artemis"
+            gui_row("row-height: 2.4em; font:gui-2;")
+            gallery_in = gui_input("", var="gallery_callsign")
+            on gui_message(gallery_in):
+                jump gallery_screen
+            gui_row("row-height: 2.4em; font:gui-2;")
+            gui_text(f"$text:`Callsign: {gallery_callsign}`;font:gui-2;color:#9ab;")
+# <<gallery
+
+        case "slider_float":
+# >>gallery: slider_float
+            default gallery_shield = 50
+            gui_row("row-height: 2.4em; font:gui-2;")
+            gallery_fs = gui_slider("min:0;max:100;label:Shields;", var="gallery_shield")
+            on gui_message(gallery_fs):
+                jump gallery_screen
+            gui_row("row-height: 2.4em; font:gui-2;")
+            gui_text(f"$text:`Shields at {int(gallery_shield)}`;font:gui-2;color:#9ab;")
+# <<gallery
+
+        case "grid_basic":
+# >>gallery: grid_basic
+            # Items wrap to a new row every N -- no manual gui_row() per line.
+            gallery_crew = ~~["Helm", "Weapons", "Science", "Engineering", "Comms", "Main"]~~
+            with gui_grid(3):
+                for gallery_post in gallery_crew:
+                    gui_text(f"$text:{gui_text_escape(gallery_post)};font:gui-2;background:#234;")
+# <<gallery
+
+        case "face_basic":
+# >>gallery: face_basic
+            default gallery_face = faces.random_terran()
+            gui_row("row-height: 1fr;")
+            gui_face(gallery_face)
+# <<gallery
+
+        case "ship_basic":
+# >>gallery: ship_basic
+            gui_row("row-height: 1fr;")
+            gui_ship("tsn_light_cruiser")
+# <<gallery
+
+        case "blank_hole":
+# >>gallery: blank_hole
+            gui_row("row-height: 2.4em; font:gui-2;")
+            gui_text("$text:`left`;font:gui-2;background:#234;")
+            gui_blank()
+            gui_text("$text:`right`;font:gui-2;background:#234;justify:right;")
+            gui_row("row-height: 2.4em; font:gui-2;")
+            # hole() reserves columns, so the next item spans them.
+            gui_hole(2)
+            gui_text("$text:`this cell spans the 2 reserved columns`;font:gui-2;background:#243;")
 # <<gallery
 
 # ---------------------------------------------------------------------------

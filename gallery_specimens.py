@@ -27,3 +27,16 @@ def gallery_ship_title(*args):
     gui_row("row-height: 1.6em; font:gui-2;")
     gui_text("$text:`Contacts`;font:gui-2;color:#8cf;")
 # <<gallery
+
+
+# >>gallery: page_master_detail
+def gallery_fleet_row(item):
+    gui_row("row-height: 1.8em; font:gui-2;")
+    gui_text(f"$text:{gui_text_escape(item['name'])};font:gui-2;")
+    gui_text(f"$text:`{item['hull']}`;font:gui-2;color:#8f8;justify:right;")
+
+
+def gallery_fleet_title(*args):
+    gui_row("row-height: 1.8em; font:gui-2;")
+    gui_text("$text:`Fleet`;font:gui-2;color:#8cf;")
+# <<gallery

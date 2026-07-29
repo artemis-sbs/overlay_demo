@@ -7,6 +7,7 @@
 import gallery_code.py
 import gallery_specimens.py
 import gallery.mast
+import gallery_pages.mast
 #
 # Overlay System Demo -- Phase 1
 #
@@ -23,8 +24,8 @@ side_set_relations(tsn, raider, sbs.DIPLOMACY.HOSTILE)
 @media/music/default "Cosmos Default Music"
 @media/skybox/sky-bored-alice "borealis"
 
-@map/overlay_demo "Overlay Demo"
-" Showcase for the GUI overlay system. Pick the Overlay Demo console.
+@map/control_gallery "Control Gallery"
+" A browsable catalog of the Cosmos GUI. The gallery opens on the server screen.
 metadata: ``` yaml
 Properties:
     Player Ships: 'gui_int_slider("$text:int;low: 1.0;high:8.0;", var= "PLAYER_COUNT")'
@@ -38,6 +39,15 @@ Properties:
     quest_doc = document_get_amd_file(get_mission_dir_filename("quests.amd"), data_parser=amd_mission_data)
     for p in to_object_list(role("__player__")):
         quest_grant_amd(p.id, quest_doc)
+    # The map IS the gallery: starting it puts the browser on the SERVER screen,
+    # which needs no console and no ship -- what a tool wants to be. It replaces
+    # LM's server main-screen (and the pause/resume region on it); "Main screen"
+    # in the header hands it back. Consoles carry their own copy too.
+    #
+    # Label by STRING, not by bare name: a bare identifier is evaluated as a
+    # Python expression, and a label is not a Python global. do_jump resolves a
+    # string against the story's label table instead.
+    gui_reroute_server("gallery_screen")
     ->END
 
 @console/overlay_demo !0 ^1 "Overlay Demo"

@@ -2,6 +2,6 @@ format version: 1
 
 Category: Test
 Category Priority: A
-Visible Mission Name: Overlay Demo
-Description: Showcase for the GUI overlay system.
-Keywords: overlay, gui, demo
+Visible Mission Name: Control Gallery
+Description: A browsable catalog of the Cosmos GUI, with overlays.
+Keywords: gui, gallery, controls, overlay, demo
