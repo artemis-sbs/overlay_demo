@@ -1,0 +1,136 @@
+# ============================================================================
+# CONTROL GALLERY -- the shell, and the Controls category.
+#
+# Pick "Control Gallery" from the console list. Left: the index. Right: the
+# live control, and under it THE SOURCE THAT BUILT IT -- sliced out of this
+# file at runtime between `# >>gallery: key` and `# <<gallery`, so the snippet
+# can never drift from the specimen.
+#
+# The shell is deliberately built out of the patterns the cosmos-gui skill
+# mandates (listbox + detail, title_template, watch/repaint), so reading this
+# file is the second lesson.
+#
+# Plan: sbs_utils/GALLERY_PLAN.md
+# ============================================================================
+
+@console/gallery !0 ^0 "Control Gallery"
+    " Every GUI control, live, next to the source that built it.
+    default gallery_spec = "text_basic"
+    jump gallery_screen
+
+
+=== gallery_screen
+    gallery_entry_data = gallery_entry(gallery_spec)
+
+# --- header -----------------------------------------------------------------
+    gui_section("area: 1, 1, 99, 5;")
+    gui_row("row-height: 1fr; font:gui-3;")
+    gui_text("$text:`CONTROL GALLERY`;font:gui-3;color:#8cf;")
+    gui_text(f"$text:{gui_text_escape(gallery_entry_data['blurb'])};font:gui-1;color:#9ab;justify:right;")
+
+# --- index ------------------------------------------------------------------
+    gui_section("area: 1, 6, 24, 99;")
+    gui_row("row-height: 1fr;")
+    gallery_nav = gui_list_box(gallery_nav_items(), "", item_template=gallery_nav_row, title_template=gallery_nav_title, select=True, collapsible=True)
+    gallery_nav.set_selected_index(gallery_nav_index(gallery_spec), False)
+
+# --- specimen ---------------------------------------------------------------
+    gallery_frame(f"SPECIMEN   {gallery_entry_data['label']}", "26, 6, 99, 42")
+
+    match gallery_spec:
+        case "text_basic":
+# >>gallery: text_basic
+            gui_row("row-height: 2.4em; font:gui-3;")
+            gui_text("$text:`Shields nominal`;font:gui-3;color:#8f8;")
+            gui_row("row-height: 2.4em; font:gui-3;")
+            gui_text("$text:`Hull breach`;font:gui-3;color:#f88;justify:center;")
+            gui_row("row-height: 2.4em; font:gui-3;")
+            gui_text("$text:`Docking clamps`;font:gui-3;background:#234;justify:right;")
+# <<gallery
+
+        case "text_live":
+# >>gallery: text_live
+            start_counter(client_id, "gallery_clock")
+            gui_row("row-height: 2.4em; font:gui-3;")
+            gallery_live = gui_text("$text:`Elapsed 0s`;font:gui-3;color:#8cf;")
+            # A plain gui_text is built once and goes stale. Keep the handle and
+            # update it. .update() REPLACES the WHOLE style string, so carry the
+            # font and color or the widget reverts to unstyled left-aligned text.
+            on change int(get_counter_elapsed_seconds(client_id, "gallery_clock", 0)):
+                gallery_elapsed = int(get_counter_elapsed_seconds(client_id, "gallery_clock", 0))
+                gallery_live.update(f"text:`Elapsed {gallery_elapsed}s`;font:gui-3;color:#8cf;")
+# <<gallery
+
+        case "button_basic":
+# >>gallery: button_basic
+            default gallery_shots = 0
+            gui_row("row-height: 2.4em; font:gui-2;")
+            gui_text(f"$text:`Fired {gallery_shots} times`;font:gui-2;color:#9ab;")
+            gui_row("row-height: 2.4em; font:gui-2;")
+            on gui_message(gui_button("Fire")):
+                gallery_shots = gallery_shots + 1
+                jump gallery_screen
+# <<gallery
+
+        case "checkbox_basic":
+# >>gallery: checkbox_basic
+            default gallery_alert = False
+            gui_row("row-height: 2.4em; font:gui-2;")
+            gallery_cb = gui_checkbox(f"text: Red alert; state: {gallery_alert}")
+            on gui_message(gallery_cb):
+                gallery_alert = not gallery_alert
+                jump gallery_screen
+            gui_row("row-height: 2.4em; font:gui-2;")
+            gui_text(f"$text:`Alert is {gallery_alert}`;font:gui-2;color:#9ab;")
+# <<gallery
+
+        case "drop_down_basic":
+# >>gallery: drop_down_basic
+            default gallery_stance = "patrol"
+            gui_row("row-height: 2.4em; font:gui-2;")
+            gallery_dd = gui_drop_down(f"text: {gallery_stance}; list: patrol, escort, attack, hold", var="gallery_stance")
+            on gui_message(gallery_dd):
+                jump gallery_screen
+            gui_row("row-height: 2.4em; font:gui-2;")
+            gui_text(f"$text:`Orders: {gallery_stance}`;font:gui-2;color:#9ab;")
+# <<gallery
+
+        case "slider_basic":
+# >>gallery: slider_basic
+            default gallery_power = 5
+            gui_row("row-height: 2.4em; font:gui-2;")
+            gallery_sl = gui_int_slider("low: 0; high: 10;")
+            on gui_message(gallery_sl):
+                gallery_power = gallery_sl.value
+                jump gallery_screen
+            gui_row("row-height: 2.4em; font:gui-2;")
+            gui_text(f"$text:`Power {gallery_power}`;font:gui-2;color:#9ab;")
+# <<gallery
+
+        case "list_box_basic":
+# >>gallery: list_box_basic
+            # A dict literal needs ~~ ~~ -- MAST parses line by line, so a bare
+            # {} broken across lines silently desyncs the whole file.
+            gallery_contacts = ~~[{"name": "Raider Alpha", "note": "hostile", "icon": 137}, {"name": "Freighter Bex", "note": "neutral", "icon": 140}, {"name": "Starbase Phoenix", "note": "friendly", "icon": 143}]~~
+            gui_row("row-height: 1fr;")
+            gallery_lb = gui_list_box(gallery_contacts, "", item_template=gallery_ship_row, title_template=gallery_ship_title, select=True)
+            on change gallery_lb.value:
+                log(f"selected {gallery_lb.get_value()['name']}", "gallery")
+# <<gallery
+
+# --- source -----------------------------------------------------------------
+    gallery_frame(f"SOURCE   {gallery_spec}", "26, 44, 99, 99", "#fc8")
+    gui_row("row-height: content;")
+    on gui_message(gui_button("Copy to clipboard")):
+        gallery_copy(gallery_spec)
+    gui_row("row-height: 1fr;")
+    gui_list_box(gallery_code_items(gallery_spec), "", item_template=gallery_code_row, read_only=True)
+
+# --- navigation -------------------------------------------------------------
+    on change gallery_nav.value:
+        gallery_next = gallery_key_of(gallery_nav.get_value())
+        if gallery_next is not None:
+            gallery_spec = gallery_next
+            jump gallery_screen
+
+    await gui()

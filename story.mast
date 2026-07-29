@@ -1,3 +1,13 @@
+# Control Gallery -- the map, and the Overlays category.
+#
+# The gallery shell and the Controls category live in gallery.mast; see
+# sbs_utils/GALLERY_PLAN.md. The two consoles below are the Overlays category:
+# every overlay kind one button away, plus the audience/fan-out checklist.
+#
+import gallery_code.py
+import gallery_specimens.py
+import gallery.mast
+#
 # Overlay System Demo -- Phase 1
 #
 # A minimal LM-backed mission: one station, player ships, and a custom
