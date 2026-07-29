@@ -1,6 +1,40 @@
-# Overlay Demo
+# Control Gallery
 
-A standalone showcase and **verification harness** for the sbs_utils **overlay system** —
+A browsable catalog of the Cosmos GUI, in the shape of Material Design's component
+gallery — and, in its **Overlays** category, the original overlay verification harness
+this mission started as.
+
+Pick the **Control Gallery** console. Left is the index; right is the live control, and
+under it **the source that built it** — sliced out of `gallery.mast` at runtime between
+`# >>gallery: key` and `# <<gallery`. The snippet cannot drift from the specimen,
+because it *is* the specimen. "Copy" puts it on your clipboard.
+
+The slicer is language-agnostic (`.mast` and `.py` both comment with `#`), so one key
+can span both files: the `gui_list_box` entry shows the MAST line **and** the Python
+`item_template` it points at — which is how real missions pair the two.
+
+| Category | What it holds |
+|---|---|
+| **Controls** | one entry per widget, live |
+| **Traps** | each trap runs **BROKEN and FIXED side by side**, with both snippets under the panel that drew them. Only the fix gets a Copy button |
+| **Overlays** | the two consoles below — every overlay kind, and the audience/fan-out checklist |
+
+Design and roadmap: `sbs_utils/GALLERY_PLAN.md`. Layout, Recipes and the AMD-authored
+prose are still to come.
+
+```
+sbs debug overlay_demo --map 0        # then open http://localhost:8765/client
+```
+
+Every specimen is checked headless with
+`--test 10 --map 0 --exercise --exercise-console gallery`, which is what makes a custom
+console reachable at all (the default cycle is core gameplay consoles only).
+
+---
+
+## Overlays
+
+The original **verification harness** for the sbs_utils **overlay system** —
 screen-anchored surfaces (hero cards, lower thirds, banners, toasts, a modal choice, a
 live HUD, letterbox / flash / credits) drawn *on top of* a console's page and its
 embedded engine views, updated without repainting the page underneath.

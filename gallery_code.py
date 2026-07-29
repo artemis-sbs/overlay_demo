@@ -18,7 +18,8 @@
 # namespace, so everything is prefixed `gallery_` / `GALLERY_`.
 
 from sbs_utils.procedural.gui import (
-    gui_row, gui_text, gui_section, gui_clipboard_put, gui_list_box_header)
+    gui_row, gui_text, gui_section, gui_clipboard_put, gui_list_box,
+    gui_list_box_header)
 from sbs_utils.helpers import gui_text_escape
 from sbs_utils.fs import get_mission_dir_filename
 from sbs_utils.procedural.execution import log
@@ -141,9 +142,23 @@ GALLERY_COLOR_COMMENT = "#6a8"
 GALLERY_COLOR_MARK = "#fc8"
 
 
-def gallery_code_escape(text):
-    """Make one source line safe to hand to gui_text as a $text: value."""
+def gallery_label(text):
+    """Make ANY text safe to hand to gui_text as a $text: value.
+
+    Two hazards, and authored prose hits both as readily as source code does:
+      * ':' and ';' would inject style properties -- gui_text_escape backticks it.
+      * '{' makes gui_text f-string-format the whole props string. A blurb saying
+        "use data={}" is an empty format field and raises at present time. '{{'
+        survives compile_format_string as a literal '{'.
+
+    Use this for every dynamic value that reaches a style string, not just code
+    (the blurb "Use data={} and read it back" is what taught us that).
+    """
     return gui_text_escape(text).replace("{", "{{").replace("}", "}}")
+
+
+# Source lines are just text with the same two hazards.
+gallery_code_escape = gallery_label
 
 
 def gallery_code_items(key):
@@ -184,7 +199,23 @@ def gallery_frame(title, area, color=None):
         color = GALLERY_PANEL_COLOR
     gui_section(f"area: {area};")
     gui_row("row-height: 1.4em; font:gui-2;")
-    gui_text(f"$text:{gui_text_escape(title)};font:gui-2;color:{color};")
+    gui_text(f"$text:{gallery_label(title)};font:gui-2;color:{color};")
+
+
+def gallery_caption(text, color="#9ab"):
+    """A what-to-watch-for line above a specimen. Deliberately OUTSIDE the marked
+    spans, so it never turns up in the snippet."""
+    gui_row("row-height: content; font:gui-1;")
+    gui_text(f"$text:{gallery_label(text)};font:gui-1;color:{color};")
+
+
+def gallery_source_panel(key, area, title, color):
+    """A read-only source panel with no Copy button -- the BROKEN half of a trap.
+    Only the fix is worth copying."""
+    gallery_frame(title, area, color)
+    gui_row("row-height: 1fr;")
+    gui_list_box(gallery_code_items(key), "",
+                 item_template=gallery_code_row, read_only=True)
 
 
 # ---------------------------------------------------------------------------
@@ -209,6 +240,25 @@ GALLERY_ENTRIES = [
      "blurb": "low/high in the props; read .value in the handler."},
     {"category": "Controls", "key": "list_box_basic", "label": "gui_list_box",
      "blurb": "Every repeating list. item_template renders a row, title_template labels it."},
+
+    # Traps run BROKEN and FIXED side by side. Each needs two marked spans,
+    # <key>_broken and <key>_fixed. Watching the broken one misbehave beats any
+    # amount of prose about it.
+    {"category": "Traps", "kind": "trap", "key": "trap_update_style",
+     "label": "update() drops the style",
+     "blurb": "update() REPLACES the whole style string -- pass only text and font, color and justify go with it."},
+    {"category": "Traps", "kind": "trap", "key": "trap_loop_handler",
+     "label": "handler in a for loop",
+     "blurb": "An inline on-block in a loop captures the loop var at its LAST value. Use data={} and read it back."},
+    {"category": "Traps", "kind": "trap", "key": "trap_row_em_font",
+     "label": "1em under a bigger font",
+     "blurb": "em is one line of the ROW's font, and an unfonted row is gui-2. Declare the font on the row."},
+    {"category": "Traps", "kind": "trap", "key": "trap_padding_height",
+     "label": "padding eats row height",
+     "blurb": "Top and bottom padding come OUT of the row height. Add it back: 1em+10px."},
+    {"category": "Traps", "kind": "trap", "key": "trap_content_starved",
+     "label": "content row starved",
+     "blurb": "A content row cannot invent space. Fill a section with fixed rows and it is correctly squeezed to nothing."},
 ]
 
 
@@ -259,10 +309,10 @@ def gallery_nav_row(item):
     every item as the dict is a TypeError on the first repaint."""
     if gallery_key_of(item) is None:
         gui_row("row-height: 1.8em; font:gui-2;")
-        gui_text(f"$text:{gui_text_escape(getattr(item, 'label', ''))};font:gui-2;color:#8cf;")
+        gui_text(f"$text:{gallery_label(getattr(item, 'label', ''))};font:gui-2;color:#8cf;")
         return
     gui_row("row-height: 1.6em; font:gui-2;")
-    gui_text(f"$text:{gui_text_escape(item['label'])};font:gui-2;", "padding: 12px, 0, 0, 0;")
+    gui_text(f"$text:{gallery_label(item['label'])};font:gui-2;", "padding: 12px, 0, 0, 0;")
 
 
 def gallery_nav_title():

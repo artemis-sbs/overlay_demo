@@ -26,7 +26,9 @@
     gui_section("area: 1, 1, 99, 5;")
     gui_row("row-height: 1fr; font:gui-3;")
     gui_text("$text:`CONTROL GALLERY`;font:gui-3;color:#8cf;")
-    gui_text(f"$text:{gui_text_escape(gallery_entry_data['blurb'])};font:gui-1;color:#9ab;justify:right;")
+    # gallery_label, not gui_text_escape: a blurb reading "use data={}" is an
+    # empty format field once gui_text f-string-formats the props.
+    gui_text(f"$text:{gallery_label(gallery_entry_data['blurb'])};font:gui-1;color:#9ab;justify:right;")
 
 # --- index ------------------------------------------------------------------
     gui_section("area: 1, 6, 24, 99;")
@@ -35,7 +37,11 @@
     gallery_nav.set_selected_index(gallery_nav_index(gallery_spec), False)
 
 # --- specimen ---------------------------------------------------------------
-    gallery_frame(f"SPECIMEN   {gallery_entry_data['label']}", "26, 6, 99, 42")
+# A trap runs BROKEN and FIXED side by side and opens its own two frames, so the
+# single-specimen frame is only for the rest.
+    gallery_is_trap = gallery_entry_data.get("kind") == "trap"
+    if not gallery_is_trap:
+        gallery_frame(f"SPECIMEN   {gallery_entry_data['label']}", "26, 6, 99, 42")
 
     match gallery_spec:
         case "text_basic":
@@ -118,13 +124,138 @@
                 log(f"selected {gallery_lb.get_value()['name']}", "gallery")
 # <<gallery
 
+# ---------------------------------------------------------------------------
+# TRAPS. Each case opens a BROKEN frame and a FIXED frame of identical size, so
+# the difference is visible without reading either snippet. Captions sit outside
+# the marked spans so they never turn up in the source panel.
+#
+# The two halves share one task scope, so the broken and fixed specimens must
+# use different variable names (trap_a_* / trap_b_*).
+# ---------------------------------------------------------------------------
+
+        case "trap_update_style":
+            gallery_frame("BROKEN", "26, 6, 62, 40", "#f88")
+            gallery_caption("Watch it lose its font, color and centering on the first tick.")
+# >>gallery: trap_update_style_broken
+            start_counter(client_id, "trap_clock")
+            gui_row("row-height: 2.4em; font:gui-3;")
+            trap_a_text = gui_text("$text:`Elapsed 0s`;font:gui-3;color:#8cf;justify:center;")
+            on change int(get_counter_elapsed_seconds(client_id, "trap_clock", 0)):
+                trap_a_n = int(get_counter_elapsed_seconds(client_id, "trap_clock", 0))
+                trap_a_text.update(f"text:`Elapsed {trap_a_n}s`")
+# <<gallery
+            gallery_frame("FIXED", "63, 6, 99, 40", "#8f8")
+            gallery_caption("Same widget, same tick, whole style carried through.")
+# >>gallery: trap_update_style_fixed
+            gui_row("row-height: 2.4em; font:gui-3;")
+            trap_b_text = gui_text("$text:`Elapsed 0s`;font:gui-3;color:#8cf;justify:center;")
+            on change int(get_counter_elapsed_seconds(client_id, "trap_clock", 0)):
+                trap_b_n = int(get_counter_elapsed_seconds(client_id, "trap_clock", 0))
+                trap_b_text.update(f"text:`Elapsed {trap_b_n}s`;font:gui-3;color:#8cf;justify:center;")
+# <<gallery
+
+        case "trap_loop_handler":
+            gallery_frame("BROKEN", "26, 6, 62, 40", "#f88")
+            gallery_caption("Click any ship. They all report 3 -- the loop var at its last value.")
+# >>gallery: trap_loop_handler_broken
+            default trap_a_pick = -1
+            gui_row("row-height: 1.8em; font:gui-2;")
+            gui_text(f"$text:`Picked {trap_a_pick}`;font:gui-2;color:#f88;")
+            for i in range(4):
+                gui_row("row-height: 2em; font:gui-2;")
+                on gui_message(gui_button(f"Ship {i}")):
+                    trap_a_pick = i
+                    jump gallery_screen
+# <<gallery
+            gallery_frame("FIXED", "63, 6, 99, 40", "#8f8")
+            gallery_caption("data={} is injected as task variables; each button reports itself.")
+# >>gallery: trap_loop_handler_fixed
+            default trap_b_pick = -1
+            gui_row("row-height: 1.8em; font:gui-2;")
+            gui_text(f"$text:`Picked {trap_b_pick}`;font:gui-2;color:#8f8;")
+            for i in range(4):
+                gui_row("row-height: 2em; font:gui-2;")
+                on gui_message(gui_button(f"Ship {i}", data={"trap_pick": i})):
+                    trap_b_pick = trap_pick
+                    jump gallery_screen
+# <<gallery
+
+        case "trap_row_em_font":
+            gallery_frame("BROKEN", "26, 6, 62, 40", "#f88")
+            gallery_caption("The row is 1em of gui-2 (24px). The gui-6 text is 52px, so it overdraws.")
+# >>gallery: trap_row_em_font_broken
+            gui_row("row-height: 1em;")
+            gui_text("$text:`Big text, small row`;font:gui-6;color:#f88;")
+            gui_row("row-height: 1em;")
+            gui_text("$text:`this line gets overdrawn`;font:gui-2;color:#9ab;")
+# <<gallery
+            gallery_frame("FIXED", "63, 6, 99, 40", "#8f8")
+            gallery_caption("Declare the font on the ROW, so 1em means one line of THAT font.")
+# >>gallery: trap_row_em_font_fixed
+            gui_row("row-height: 1em; font:gui-6;")
+            gui_text("$text:`Big text, sized row`;font:gui-6;color:#8f8;")
+            gui_row("row-height: 1em;")
+            gui_text("$text:`this line stays clear`;font:gui-2;color:#9ab;")
+# <<gallery
+
+        case "trap_padding_height":
+            gallery_frame("BROKEN", "26, 6, 62, 40", "#f88")
+            gallery_caption("10px of top padding is taken OUT of the row's 1em.")
+# >>gallery: trap_padding_height_broken
+            gui_row("row-height: 1em; font:gui-3;")
+            gui_text("$text:`padded, clipped`;font:gui-3;color:#f88;", "padding: 0, 10px, 0, 0;")
+            gui_row("row-height: 1em; font:gui-3;")
+            gui_text("$text:`the next line`;font:gui-3;color:#9ab;")
+# <<gallery
+            gallery_frame("FIXED", "63, 6, 99, 40", "#8f8")
+            gallery_caption("Ask for the padding back. Arithmetic works in row-height.")
+# >>gallery: trap_padding_height_fixed
+            gui_row("row-height: 1em+10px; font:gui-3;")
+            gui_text("$text:`padded, whole`;font:gui-3;color:#8f8;", "padding: 0, 10px, 0, 0;")
+            gui_row("row-height: 1em; font:gui-3;")
+            gui_text("$text:`the next line`;font:gui-3;color:#9ab;")
+# <<gallery
+
+        case "trap_content_starved":
+            gallery_frame("BROKEN", "26, 6, 62, 40", "#f88")
+            gallery_caption("Two fixed 6em rows eat the panel. The content row is left nothing.")
+# >>gallery: trap_content_starved_broken
+            gui_row("row-height: 6em; font:gui-2;")
+            gui_text("$text:`fixed 6em`;font:gui-2;background:#234;")
+            gui_row("row-height: 6em; font:gui-2;")
+            gui_text("$text:`fixed 6em`;font:gui-2;background:#234;")
+            gui_row("row-height: content; font:gui-2;")
+            gui_text("$text:`content row -- squeezed to nothing`;font:gui-2;color:#f88;background:#423;")
+# <<gallery
+            gallery_frame("FIXED", "63, 6, 99, 40", "#8f8")
+            gallery_caption("Same rows, given room. Content cannot invent space.")
+# >>gallery: trap_content_starved_fixed
+            gui_row("row-height: 2em; font:gui-2;")
+            gui_text("$text:`fixed 2em`;font:gui-2;background:#234;")
+            gui_row("row-height: 2em; font:gui-2;")
+            gui_text("$text:`fixed 2em`;font:gui-2;background:#234;")
+            gui_row("row-height: content; font:gui-2;")
+            gui_text("$text:`content row -- sized to its text`;font:gui-2;color:#8f8;background:#243;")
+# <<gallery
+
 # --- source -----------------------------------------------------------------
-    gallery_frame(f"SOURCE   {gallery_spec}", "26, 44, 99, 99", "#fc8")
-    gui_row("row-height: content;")
-    on gui_message(gui_button("Copy to clipboard")):
-        gallery_copy(gallery_spec)
-    gui_row("row-height: 1fr;")
-    gui_list_box(gallery_code_items(gallery_spec), "", item_template=gallery_code_row, read_only=True)
+# Both halves of a trap, under the panel each one drew. Only the fix gets a Copy
+# button -- nobody wants the broken one on their clipboard.
+    if gallery_is_trap:
+        gallery_source_panel(f"{gallery_spec}_broken", "26, 42, 62, 99", "SOURCE   broken", "#f88")
+        gallery_frame("SOURCE   fixed", "63, 42, 99, 99", "#8f8")
+        gui_row("row-height: content;")
+        on gui_message(gui_button("Copy the fix")):
+            gallery_copy(f"{gallery_spec}_fixed")
+        gui_row("row-height: 1fr;")
+        gui_list_box(gallery_code_items(f"{gallery_spec}_fixed"), "", item_template=gallery_code_row, read_only=True)
+    else:
+        gallery_frame(f"SOURCE   {gallery_spec}", "26, 44, 99, 99", "#fc8")
+        gui_row("row-height: content;")
+        on gui_message(gui_button("Copy to clipboard")):
+            gallery_copy(gallery_spec)
+        gui_row("row-height: 1fr;")
+        gui_list_box(gallery_code_items(gallery_spec), "", item_template=gallery_code_row, read_only=True)
 
 # --- navigation -------------------------------------------------------------
     on change gallery_nav.value:
