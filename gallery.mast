@@ -24,6 +24,11 @@
 # `default` lives here rather than only in the console body.
 === gallery_screen
     default gallery_spec = "text_basic"
+    # Order no longer matters: the page restores the button to what was ASKED
+    # for, so this holds across every rebuild. (Calling
+    # sbs.transparent_options_button directly does not -- on_new_gui takes it
+    # back on the first tagged widget of the next build.)
+    gui_options_button()
     gallery_entry_data = gallery_entry(gallery_spec)
 
 # --- header -----------------------------------------------------------------

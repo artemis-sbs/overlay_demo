@@ -39,6 +39,17 @@ Properties:
     quest_doc = document_get_amd_file(get_mission_dir_filename("quests.amd"), data_parser=amd_mission_data)
     for p in to_object_list(role("__player__")):
         quest_grant_amd(p.id, quest_doc)
+    # The gallery owns the server screen, so clear the two things that sit on top
+    # of it. Both are engine-side and no-ops under the mock, so they can only be
+    # judged in a real session.
+    #
+    # The flag is the DIALOG's state, not the suppression's: 0 hides the connect
+    # nag, 1 brings it back (Drop_off turns it off for its intro and back on
+    # after). Consoles still connect normally -- this is a server-screen overlay,
+    # not the connection mechanism.
+    sbs.suppress_client_connect_dialog(0)
+    # Per client; 0 is the server machine, 1 turns transparency ON.
+    sbs.transparent_options_button(0, 1)
     # The map IS the gallery: starting it puts the browser on the SERVER screen,
     # which needs no console and no ship -- what a tool wants to be. It replaces
     # LM's server main-screen (and the pause/resume region on it); "Main screen"
