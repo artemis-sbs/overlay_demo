@@ -277,6 +277,32 @@
             gui_ship("tsn_light_cruiser")
 # <<gallery
 
+        case "image_basic":
+# >>gallery: image_basic
+            # PREFER AN ATLAS KEY. It names the art once, so every screen that
+            # draws it is re-skinned by re-registering the key -- the same
+            # argument as icons by name. Art is addressed WITHOUT its extension.
+            #
+            # media_shared() resolves against this mission's media/ first, then
+            # any pack declared under shared_media in story.json. These are
+            # LegendaryMissions images, pinned and never copied.
+            gui_image_add_atlas("gallery_badge", media_shared("operator"))
+            gui_row("row-height: 1fr;")
+            gui_image("gallery_badge", fit=3)
+
+            # An atlas key can name a CELL of a sheet. The rect is in PIXELS
+            # (left, top, right, bottom), not percent: terran_deck is 2470x1120,
+            # a 13x4 grid of 190x280 cards, so this is the first card.
+            gui_image_add_atlas("gallery_card", media_shared("casino/terran_deck"), 0, 0, 190, 280)
+            gui_row("row-height: 1fr;")
+            gui_image("gallery_card", fit=3)
+
+            # The quick form: the file directly, no key. Fine for one-offs, but
+            # nothing else can re-skin it.
+            gui_row("row-height: 1fr;")
+            gui_image(media_shared("artemis_home_page"), fit=3)
+# <<gallery
+
         case "blank_hole":
 # >>gallery: blank_hole
             gui_row("row-height: 2.4em; font:gui-2;")

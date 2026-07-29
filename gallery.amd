@@ -209,6 +209,27 @@ A hull rendered from its ship_data key.
 Like the slider, a Ship declines to be measured -- its size includes engine-drawn
 chrome -- so it falls back to flex in a content-sized column rather than to zero.
 
+## [gui_image](image_basic)
+---
+Category: Controls
+---
+Prefer an ATLAS KEY. Naming the art once is what lets a mission re-skin it.
+
+`gui_image_add_atlas(key, file)` registers a name, and any command taking image
+properties then accepts that key. A mission re-skins every screen that draws it
+by re-registering the key -- the same argument as icons by name. Passing the
+file directly works and is fine for a one-off, but nothing else can re-skin it.
+
+- Art is addressed WITHOUT its extension; the engine appends it.
+- `media_shared("name")` resolves against this mission's `media/` first, then
+  every pack declared under `shared_media:` in story.json. This gallery draws
+  LegendaryMissions art it pins and never copies.
+- An atlas key can name a CELL of a sheet, and the rect is in **pixels**
+  (left, top, right, bottom), not percent.
+- `fit`: 0 stretch, 1 absolute pixels, 2 keep aspect (top-left), 3 keep aspect
+  (centered). Stretching art into a box it does not match is the usual reason a
+  panel looks wrong.
+
 ## [gui_blank / gui_hole](blank_hole)
 ---
 Category: Controls
