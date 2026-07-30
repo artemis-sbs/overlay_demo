@@ -18,19 +18,21 @@ The slicer is language-agnostic (`.mast` and `.py` both comment with `#`), so on
 can span both files: the `gui_list_box` entry shows the MAST line **and** the Python
 `item_template` it points at — which is how real missions pair the two.
 
-**"Take the tour"** walks all 37 entries in order, narrating each through the overlay
+**"Take the tour"** walks all 54 entries in order, narrating each through the overlay
 system's own lower third — the gallery introducing itself with the feature this mission
 was built to demo. It ends at either end rather than looping, so it tells you when you
 have seen everything.
 
-| Category | What it holds |
-|---|---|
-| **Controls** | one entry per widget, live |
-| **Layout** | `row-height` / `col-width` modes, size arithmetic, `overflow` — every box backgrounded, because the subject is where the edges land |
-| **Recipes** | composed patterns: watch/repaint, a status line, a reusable style, and a shelf of four `item_template`s switched live |
-| **Traps** | each trap runs **BROKEN and FIXED side by side**, with both snippets under the panel that drew them. Only the fix gets a Copy button |
-| **Full page** | drawn on the **Gallery Viewer** console: an embedded engine view, a self-redrawing region, a master/detail console, and a **layout playground** whose dropdowns move the boxes under you |
-| **Overlays** | the two consoles below — every overlay kind, and the audience/fan-out checklist |
+54 entries in six categories:
+
+| Category | Entries | What it holds |
+|---|---|---|
+| **Controls** | 20 | one entry per widget, live |
+| **Layout** | 4 | `row-height` / `col-width` modes, size arithmetic, `overflow` — every box backgrounded, because the subject is where the edges land |
+| **Recipes** | 4 | composed patterns: watch/repaint, a status line, a reusable style, and a shelf of four `item_template`s switched live |
+| **Traps** | 5 | each trap runs **BROKEN and FIXED side by side**, with both snippets under the panel that drew them. Only the fix gets a Copy button |
+| **Full page** | 4 | drawn on the **Gallery Viewer** console: an embedded engine view, a self-redrawing region, a master/detail console, and a **layout playground** whose dropdowns move the boxes under you |
+| **Overlays** | 17 | every overlay kind, plus `announce()` and the audience/fan-out rules — see below |
 
 ## Adding an entry
 
@@ -65,21 +67,13 @@ sim-second, so watcher code never executes at all:
 `--exercise-click "Take the tour,Next"` drives the tour, so **one boot visits every
 specimen** instead of one boot each — the mastlib compile is most of a run's cost.
 
+That visits every specimen but only *draws* them: `--exercise` clicks nothing on these
+screens by itself, so a green run without an explicit label list proves the specimens
+built, not that any handler ran. To fire the overlay specimens, name their buttons in
+`--exercise-click`. (The flag is comma-separated, so a button label containing a comma
+cannot be driven.)
+
 ---
-
-## Overlays
-
-The original **verification harness** for the sbs_utils **overlay system** —
-screen-anchored surfaces (hero cards, lower thirds, banners, toasts, a modal choice, a
-live HUD, letterbox / flash / credits) drawn *on top of* a console's page and its
-embedded engine views, updated without repainting the page underneath.
-
-Every overlay feature is one button away, so a change to the overlay layer can be
-eyeballed in a real Cosmos session in about a minute.
-
-- System design: `sbs_utils/OVERLAY_PLAN.md`
-- When to use an overlay vs the info panel / comms: `sbs_utils/OVERLAY_ADOPTION_PLAN.md`
-- API docs: `sbs_utils/mkdocs/docs/cosmos/overlays.md`
 
 ## Running it
 
@@ -100,40 +94,69 @@ a second tab gets a second console.
 > (`python sbs.pyz lib sbs_utils` from `data/missions`) or the engine silently runs the
 > old library. The mock can use the working tree directly with `--use-working-tree`.
 
-## The two consoles
+## The Overlays category
 
-### Overlay Demo — every kind
+The mission started as the overlay system's **verification harness**: two consoles and
+31 buttons. Those consoles are gone — every one of them is now a gallery specimen, which
+means each gets a source panel and a notes panel like everything else. A button that
+fires an overlay never showed you the call that fired it, which was the whole complaint
+the gallery answers.
 
-Each button fires one overlay **on the console you clicked**, over a live 3D view, so
-you are looking at draw-layer stacking against a real engine widget: hero card, top
-banner, corner toast (click repeatedly — toasts stack), lower third, modal choice
-(returns an awaitable), sticky HUD with a live watcher and a toggle control, an overlay
-declared in `overlays.amd`, a card built by a `//overlay/<kind>` MAST route, a quest
-completion overlay, a signal-driven show, letterbox, flash, rolling credits, clear.
+### The audience dial
 
-### Overlay Audience — who sees it
+Twelve of those 31 buttons differed only in their `to=` argument — the one thing you
+cannot see from a button. There is now **one dial** at the top of every overlay
+specimen, and the line under it says what your pick **resolves to**:
 
-`to` is an **audience expression**, so this console targets ships and sides rather than
-one console. **Connect two or more consoles, one of them a main screen** — with a single
-console these are indistinguishable from targeting yourself.
+| Pick | Resolves to | Expect |
+|---|---|---|
+| this screen | `to=client_id` | only the screen you are reading |
+| gallery viewer | `to=role("gallery_viewer")` | the other surface — **nobody** until you open that console |
+| my ship | `to=my_ship` | **every** console of that ship |
+| mainscreen only | `to=my_ship, consoles="mainscreen"` | the main screen only; the console you clicked stays clear |
+| my side | `to="tsn"` | every console of every `tsn` ship |
+| all players | `to=role("__player__")` | everywhere (ships resolve to their consoles) |
+| a station | `to=role("station")` | **nothing** — no console is aboard one |
 
-| Button | Expected |
-|---|---|
-| 1. To my SHIP | banner on **every** console of your ship, no others |
-| 2. MAINSCREEN only | hero on the main screen only; the console you clicked stays clear |
-| 3. To my SIDE | banner on every console of every `tsn` ship |
-| 4. To ALL player ships | toast everywhere (ships resolve to their consoles) |
-| 5. To a STATION | **nothing** — plus one `resolved to no console` line in the log |
-| 6. announce chapter | hero **and** a card in the info panel |
-| 7. announce alert | banner **and** a card |
-| 8. announce hail | lower third **and** a comms message from the station |
-| 9. announce status | toast only — the info panel must stay empty |
-| 10. long headline | banner is one clamped ASCII line; the card holds the full text |
-| Clear (console / ship) | clears just yours, vs the whole ship |
+That is the lesson of the category: `to=` takes ordinary values — a client id, a role
+set, a ship id, a side name — and there is no overlay-specific addressing to learn.
+`consoles=` is a *second* narrowing applied after `to=`, not an alternative to it.
 
-Buttons 6-9 exercise `announce()`, which fires the overlay **and** leaves the durable
-record. Check the info panel and comms too — a missing twin is the failure the pairing
-exists to prevent.
+Two picks legitimately reach nobody, and both are worth firing on purpose: an overlay
+that does not appear is nearly always an audience that resolved to nothing.
+
+### One console, morphed
+
+The audience specimens need two surfaces, one of them a main screen. Rather than leave
+the whole crew set on the selection screen, the **Gallery Viewer** morphs into any of
+seven consoles ("morph the viewer"), so the mission offers exactly two consoles:
+`gallery` and `gallery_viewer`. Turning a console off removes it from the selection
+screen but does **not** unregister it, which is what makes that work.
+
+The morph sets the console **role** as well as `CONSOLE_TYPE`. Audience narrowing goes
+through `any_role()`, so a screen with the type and no role is invisible to overlays,
+`announce()` and comms targeting — and the message is dropped in silence. It also clears
+that client's overlays first: a hero card left from the gallery page has no business on
+a mainscreen.
+
+### announce()
+
+Four specimens cover `announce()`, which fires the overlay **and** leaves the durable
+record — the one to reach for by default:
+
+| level | overlay | record |
+|---|---|---|
+| `chapter` | hero card | info-panel card |
+| `alert` | top banner | info-panel card |
+| `hail` | lower third | comms message (from `sender=`) |
+| `status` | corner toast | none — the deliberate exception |
+
+Check the info panel and comms as well as the overlay: a missing twin is the failure the
+pairing exists to prevent.
+
+- System design: `sbs_utils/OVERLAY_PLAN.md`
+- When to use an overlay vs the info panel / comms: `sbs_utils/OVERLAY_ADOPTION_PLAN.md`
+- API docs: `sbs_utils/mkdocs/docs/cosmos/overlays.md`
 
 ## What to watch for
 
@@ -160,7 +183,9 @@ gallery_pages.mast     the Gallery Viewer console + the full-page specimens
 gallery_specimens.py   the Python templates specimens reference (marked with the same keys)
 gallery_code.py        chrome: the source slicer, the code view, the index loader, the tour
 
-story.mast             the map, the two Overlays consoles, the //overlay route, signal bridge
+story.mast             the map, and the plumbing specimens use but do not own:
+                       the //overlay custom-kind route, the modal and HUD-watcher
+                       labels, and the signal bridge
 overlays.amd           a declaratively-authored overlay (fired by key with overlay_amd)
 quests.amd             a demo quest, for the quest lifecycle overlays
 story.json             the packaged sbslib, LM mastlibs and media pack this mission loads
