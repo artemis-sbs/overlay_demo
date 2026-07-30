@@ -8,8 +8,8 @@
             "request": "launch",
             "module": "cosmos_dev.mission_runner",
             "console": "integratedTerminal",
-            "cwd": "${workspaceFolder}/../overlay_demo",
-            "envFile": "${workspaceFolder}/../overlay_demo/.env",
+            "cwd": "${workspaceFolder}/../control_gallery",
+            "envFile": "${workspaceFolder}/../control_gallery/.env",
             "args": [".", "--gui", "--map", "0"],
             "subProcess": false
         },
@@ -19,8 +19,8 @@
             "request": "launch",
             "module": "cosmos_dev.mission_runner",
             "console": "integratedTerminal",
-            "cwd": "${workspaceFolder}/../overlay_demo",
-            "envFile": "${workspaceFolder}/../overlay_demo/.env",
+            "cwd": "${workspaceFolder}/../control_gallery",
+            "envFile": "${workspaceFolder}/../control_gallery/.env",
             "args": [".", "--map", "0"],
             "subProcess": false
         },
@@ -30,7 +30,7 @@
             "name": "MAST: Debug mission (one click)",
             "type": "mast",
             "request": "launch",
-            "mission": "${workspaceFolder}/../overlay_demo",
+            "mission": "${workspaceFolder}/../control_gallery",
             "map": "0"
         }
 

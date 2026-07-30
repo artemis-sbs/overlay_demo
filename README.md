@@ -52,7 +52,7 @@ span shows up in the source panel rather than silently doing nothing.
 Design and roadmap: `sbs_utils/GALLERY_PLAN.md`.
 
 ```
-sbs debug overlay_demo --map 0        # browser: http://localhost:8765/server
+sbs debug control_gallery --map 0        # browser: http://localhost:8765/server
 ```
 
 Specimens are checked headless. A custom console is only reachable with
@@ -84,7 +84,7 @@ and connect consoles.
 **In the browser mock** (cheap first pass for layout and fan-out):
 
 ```
-sbs debug overlay_demo --map 0
+sbs debug control_gallery --map 0
 ```
 
 then open `http://localhost:8765/server` for the gallery, or `/client` for a console —
