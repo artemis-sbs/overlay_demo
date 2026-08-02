@@ -384,6 +384,13 @@
             gui_row("row-height: 3em; font:gui-2;")
             gui_text("$text:`col-width is a percent of the SECTION`;font:gui-2;background:#432;", "col-width: 40;")
             gui_text("$text:`the other 60`;font:gui-2;background:#325;")
+            gui_row("row-height: 3em; font:gui-2;")
+            # square reads the OTHER axis: as wide as the row is tall. What a
+            # portrait, an icon or a ship render wants. gui_face and gui_icon are
+            # square already; gui_ship and the image widgets are NOT, so beside
+            # text they flex and take half the row until told this.
+            gui_text("$text:`square`;font:gui-2;background:#343;", "col-width: square;")
+            gui_text("$text:`square is 3em wide because the ROW is 3em tall`;font:gui-2;background:#325;")
 # <<gallery
 
         case "layout_arithmetic":
