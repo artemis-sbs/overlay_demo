@@ -224,6 +224,19 @@
             gui_text_area("## Status^All systems nominal.^- shields up^- 1 contact^^### Orders^1. Hold station^2. Await the escort")
 # <<gallery
 
+        case "callout_basic":
+# >>gallery: callout_basic
+            # An .amd body, exactly as an author writes it in a library document.
+            gui_row("row-height: 1fr;")
+            callout_src = amd_callout_demo_source()
+            callout_text, callout_styles = amd_callout_render(callout_src)
+            # `line_styles` is the SAME per-line mechanism gui_text_area already
+            # had. A line outside a callout gets None and is styled normally, so
+            # passing the list is always safe -- a document with no callouts in it
+            # renders exactly as it did before.
+            gui_text_area(callout_text, line_styles=callout_styles)
+# <<gallery
+
         case "icon_basic":
 # >>gallery: icon_basic
             gui_row("row-height: 3em;")

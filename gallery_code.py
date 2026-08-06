@@ -602,3 +602,36 @@ def gallery_audience_note(which):
     if which == "a station":
         return "to=role('station') -- expect NOTHING: no console is aboard one"
     return which
+
+
+# --- AMD callouts ------------------------------------------------------------
+# `amd_callout_render` is the whole bridge from an .amd body to a drawn block, so
+# the specimen calls the real function on real authored text rather than
+# hand-building a styles list. Re-exported here because MAST shares one namespace:
+# importing it in this module is what makes it callable from gallery.mast.
+from sbs_utils.procedural.amd_callout import amd_callout_render  # noqa: E402,F401
+
+
+def amd_callout_demo_source():
+    """The .amd body the callout specimen renders - written the way a library
+    document actually is, one callout of each kind plus prose around them so the
+    boundary between styled and unstyled lines is visible.
+
+    No braces anywhere: a body string passes through f-string formatting on its way
+    into gui_text_area, and a stray brace is a runtime error at the call site.
+    """
+    return "\n".join([
+        "Docking clearance is granted by the station, not assumed.",
+        "",
+        "> [!NOTE] Standard Approach",
+        "> Hold at 2000 and hail. Clearance is verbal.",
+        "",
+        "> [!WARNING] Quarantine Notice",
+        "> Do not dock. Contact TSN Command on channel 4.",
+        "> Their manifest is sealed by order of the Admiralty.",
+        "",
+        "> [!DANGER] Reactor Breach",
+        "> Leave the area. Do not attempt rescue.",
+        "",
+        "Prose resumes here, unstyled - this line proves the block ended.",
+    ])

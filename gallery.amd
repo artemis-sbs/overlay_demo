@@ -139,6 +139,23 @@ vertical scrollbar when the content overflows.
 - It CANNOT render source code: `#` is also a MAST comment, `-` a bullet, and
   `$` a style directive. Render code as one gui_text per line.
 
+## [AMD callouts](callout_basic)
+---
+Category: Controls
+---
+An in-fiction document's WARNING box, from `> [!WARNING]` in an .amd body.
+
+`amd_callout_render` turns a callout block into the plain text plus the
+`line_styles` list `gui_text_area` already takes, so the block is drawn by the
+per-line style machinery rather than by anything new.
+- The `>` markers come off; they are markup, not words.
+- The title line is a size larger; every line of the block shares a background.
+- WATCH THE SEAM: the block is drawn as consecutive per-line backgrounds. If they
+  do not abut, that gap is the thing to fix, and it is a widget-layer problem
+  rather than an AMD one.
+- An unknown kind reads as a plain quote and the linter says so, so a document
+  written against a newer build still renders.
+
 ## [gui_icon](icon_basic)
 ---
 Category: Controls
