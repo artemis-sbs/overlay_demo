@@ -609,17 +609,8 @@ def gallery_audience_note(which):
 # MastGlobals.register_mission_functions: an imported name keeps its own
 # __module__, so a re-export is NOT registered). So a library function a specimen
 # wants to call has to be reached through a def that lives here.
-from sbs_utils.procedural.amd_callout import amd_callout_render  # noqa: E402
 
 
-# >>gallery: callout_basic
-def amd_callout_demo():
-    """The .amd body -> (text, line_styles), through the REAL library function.
-
-    `amd_callout_render` is the whole bridge from an authored callout to a drawn
-    block, so the specimen calls it rather than hand-building a styles list."""
-    return amd_callout_render(amd_callout_demo_source())
-# <<gallery
 
 
 def amd_callout_demo_source():
