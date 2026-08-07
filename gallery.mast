@@ -436,10 +436,72 @@
             gui_blank()
 # <<gallery
 
+        case "layout_hide_restore":
+# >>gallery: layout_hide_restore
+            # Hiding a control hands its space to its siblings; showing it again
+            # takes that space back at the SAME size it had before.
+            default hide_middle = False
+            gui_row("row-height: 2em; font:gui-1;")
+            on gui_message(gui_button("Toggle the middle control")):
+                hide_middle = not hide_middle
+                jump gallery_screen
+
+            gui_row("row-height: 2.4em; font:gui-2;")
+            gui_button("Pause")
+            hide_target = gui_button("Resume")
+            gui_button("Restart")
+
+            # gui_hide records an INTENTION, which is why it is safe to call on
+            # something already off screen: a control scrolled out of view still
+            # records the hide and stays hidden when it scrolls back.
+            if hide_middle:
+                gui_hide(hide_target)
+            else:
+                gui_show(hide_target)
+
+            gui_row("row-height: content; font:gui-1;")
+            gui_text("$text:`Two buttons split the row while the third is away, and all three go back to a third each on restore.`;font:gui-1;color:#9ab;")
+# <<gallery
+
 # ---------------------------------------------------------------------------
 # RECIPES. Composed patterns rather than single widgets -- the shapes a real
 # console is made of. A new author copies one of these, not a gui_text call.
 # ---------------------------------------------------------------------------
+
+        case "recipe_panel_swap":
+# >>gallery: recipe_panel_swap
+            # Two regions pinned to the SAME area. One is shown, one is hidden,
+            # and a condition decides which -- LM's console-select shape.
+            #
+            # A region's own rectangle is always sent as the whole screen, so
+            # hiding a region does not move the region, it moves its CONTENT off
+            # screen. These two really are stacked; the hide is the only thing
+            # keeping them apart. Hide neither and they both draw at once.
+            default swap_locked = False
+            gui_row("row-height: 2em; font:gui-1;")
+            on gui_message(gui_button("Start the game")):
+                swap_locked = not swap_locked
+                jump gallery_screen
+
+            swap_pick = gui_region("area: 30, 22, 94, 32;")
+            with swap_pick:
+                gui_row("row-height: 1fr; font:gui-3;")
+                gui_text("$text:`Your ship:  Artemis`;font:gui-3;color:#8cf;justify:center;")
+
+            swap_shut = gui_region("area: 30, 22, 94, 32;")
+            with swap_shut:
+                gui_row("row-height: 1fr; font:gui-3;")
+                gui_text("$text:`Ship locked -- the game has started`;font:gui-3;color:#fc8;justify:center;")
+
+            # Neither panel is rebuilt to change which one is up, so both keep
+            # whatever state they were holding.
+            if swap_locked:
+                gui_hide(swap_pick)
+                gui_show(swap_shut)
+            else:
+                gui_show(swap_pick)
+                gui_hide(swap_shut)
+# <<gallery
 
         case "recipe_watch_repaint":
 # >>gallery: recipe_watch_repaint

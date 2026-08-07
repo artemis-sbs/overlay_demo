@@ -321,6 +321,40 @@ Applied at present time against the final rect. The engine does NOT clip, so
 This is not a substitute for sizing the row properly -- reach for it only when
 the text genuinely cannot fit at any size.
 
+## [hide and restore](layout_hide_restore)
+---
+Category: Layout
+---
+
+A hidden control gives its space back, and gets exactly that space again on show.
+
+- Hiding is a LAYOUT change, not a paint change: the siblings re-share the row
+  the moment one drops out, and take their original widths back on restore.
+- `gui_hide` records an INTENTION. A control that is merely scrolled out of
+  view still records the hide, so it stays hidden when it scrolls back -- the
+  two are tracked separately, and only the script owns the first one.
+- Prefer this to rebuilding the row. The control keeps its identity, its value
+  and its handlers; a rebuild throws all three away.
+
+## [swap two panels in one place](recipe_panel_swap)
+---
+Category: Recipes
+---
+
+Two regions pinned to the SAME area, one shown and one hidden.
+
+This is how a console offers two faces of one thing -- an editable panel and a
+read-only one, a picker and a "locked in" notice. LM's console-select is built
+exactly this way.
+
+Worth knowing why it works, because the API does not suggest it. A region's own
+rectangle is always sent to the engine as the WHOLE screen, so hiding a region
+does not move the region -- it moves its CONTENT off screen. Two overlapping
+regions really are stacked, and the hide is the only thing keeping them apart.
+Hide neither and they both draw, on top of each other.
+
+Neither panel is rebuilt to change which one is up, so both keep their state.
+
 ## [watch / repaint](recipe_watch_repaint)
 ---
 Category: Recipes
