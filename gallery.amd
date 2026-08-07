@@ -330,11 +330,15 @@ A hidden control gives its space back, and gets exactly that space again on show
 
 - Hiding is a LAYOUT change, not a paint change: the siblings re-share the row
   the moment one drops out, and take their original widths back on restore.
+- **No rebuild.** `show()` marks the layout dirty and the dirty system
+  re-presents the enclosing section by itself. Repaint the whole page instead
+  and a plain `if` around the widget does the same job -- which is the entire
+  reason to reach for `gui_hide`.
+- The control keeps its identity, its value and its handlers. A rebuild throws
+  all three away.
 - `gui_hide` records an INTENTION. A control that is merely scrolled out of
   view still records the hide, so it stays hidden when it scrolls back -- the
   two are tracked separately, and only the script owns the first one.
-- Prefer this to rebuilding the row. The control keeps its identity, its value
-  and its handlers; a rebuild throws all three away.
 
 ## [swap two panels in one place](recipe_panel_swap)
 ---
@@ -353,7 +357,9 @@ does not move the region -- it moves its CONTENT off screen. Two overlapping
 regions really are stacked, and the hide is the only thing keeping them apart.
 Hide neither and they both draw, on top of each other.
 
-Neither panel is rebuilt to change which one is up, so both keep their state.
+Hiding a region marks THAT REGION dirty, so only it re-presents -- the page
+underneath is never repainted and neither panel is rebuilt, so both keep whatever
+state they were holding. Swapping by rebuilding the screen would discard it.
 
 ## [watch / repaint](recipe_watch_repaint)
 ---
